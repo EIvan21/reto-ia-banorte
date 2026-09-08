@@ -64,6 +64,12 @@ app = FastAPI(
 )
 
 if APP_MCP is not None:
+    # Nota de seguridad: /mcp queda abierto aunque AGENT_API_KEY este configurada.
+    # El Bearer protege /v1/responses porque ahi cada peticion gasta una llamada
+    # al modelo, y sin auth cualquiera que descubra la URL consume la API key.
+    # /mcp no llama al modelo: solo lee un CV que de todos modos es publico, con
+    # costo cero por peticion. Cerrarlo no protegeria nada y romperia el objetivo
+    # de que cualquier agente pueda consultar el perfil.
     app.mount("/mcp", APP_MCP)
 
 CABECERAS_SSE = {

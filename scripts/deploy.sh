@@ -44,10 +44,27 @@ gcloud services enable \
 if ! gcloud secrets describe "$SECRETO" --project "$PROYECTO" &>/dev/null; then
   echo
   echo "==> El secreto '$SECRETO' no existe. Se va a crear."
-  echo "    Pega tu API key de Anthropic y presiona Enter."
-  echo "    (No se muestra en pantalla y no queda en el historial del shell.)"
-  read -rs CLAVE
-  echo
+
+  # Si hay un .env local con la clave, se usa esa. Evita volver a teclearla y
+  # permite que el despliegue corra sin intervencion.
+  CLAVE=""
+  if [[ -f .env ]] && grep -q '^ANTHROPIC_API_KEY=' .env; then
+    CLAVE="$(grep '^ANTHROPIC_API_KEY=' .env | head -1 | cut -d= -f2- | tr -d '\r\n"'"'"' ')"
+    echo "    Tomada del archivo .env local."
+  fi
+
+  if [[ -z "$CLAVE" ]]; then
+    echo "    Pega tu API key de Anthropic y presiona Enter."
+    echo "    (No se muestra en pantalla y no queda en el historial del shell.)"
+    read -rs CLAVE
+    echo
+  fi
+
+  if [[ -z "$CLAVE" ]]; then
+    echo "ERROR: no hay API key. Crea .env con ANTHROPIC_API_KEY=... o tecleala." >&2
+    exit 1
+  fi
+
   printf '%s' "$CLAVE" | gcloud secrets create "$SECRETO" \
     --data-file=- --replication-policy=automatic --project "$PROYECTO"
   unset CLAVE
@@ -56,15 +73,31 @@ else
   echo "==> El secreto '$SECRETO' ya existe; se reutiliza."
 fi
 
-# La cuenta de servicio por defecto de Cloud Run necesita poder leer el secreto.
+# --- Bearer token del propio endpoint ---------------------------------------
+# Sin esto, cualquiera que descubra la URL puede gastar la API key de Anthropic.
+# Se genera una sola vez y se guarda en Secret Manager; se registra en el campo
+# "Clave de API" de la plataforma del reto.
+SECRETO_AGENTE="${SECRETO_AGENTE:-agent-api-key}"
+if ! gcloud secrets describe "$SECRETO_AGENTE" --project "$PROYECTO" &>/dev/null; then
+  echo "==> Generando token de acceso al endpoint..."
+  python -c "import secrets; print(secrets.token_urlsafe(32), end='')" \
+    | gcloud secrets create "$SECRETO_AGENTE" \
+      --data-file=- --replication-policy=automatic --project "$PROYECTO"
+else
+  echo "==> El token del endpoint ya existe; se reutiliza."
+fi
+
+# La cuenta de servicio por defecto de Cloud Run necesita leer ambos secretos.
 NUMERO_PROYECTO="$(gcloud projects describe "$PROYECTO" --format='value(projectNumber)')"
 CUENTA_SERVICIO="${NUMERO_PROYECTO}-compute@developer.gserviceaccount.com"
 
-echo "==> Dando acceso al secreto a ${CUENTA_SERVICIO}..."
-gcloud secrets add-iam-policy-binding "$SECRETO" \
-  --member="serviceAccount:${CUENTA_SERVICIO}" \
-  --role="roles/secretmanager.secretAccessor" \
-  --project "$PROYECTO" --quiet >/dev/null
+for s in "$SECRETO" "$SECRETO_AGENTE"; do
+  echo "==> Dando acceso a '$s' a ${CUENTA_SERVICIO}..."
+  gcloud secrets add-iam-policy-binding "$s" \
+    --member="serviceAccount:${CUENTA_SERVICIO}" \
+    --role="roles/secretmanager.secretAccessor" \
+    --project "$PROYECTO" --quiet >/dev/null
+done
 
 # --- Despliegue -------------------------------------------------------------
 # Primer despliegue sin PUBLIC_BASE_URL: todavia no se conoce la URL. Se corrige
@@ -84,30 +117,44 @@ gcloud run deploy "$SERVICIO" \
   --concurrency 40 \
   --min-instances "$MIN_INSTANCIAS" \
   --max-instances "$MAX_INSTANCIAS" \
-  --set-secrets "ANTHROPIC_API_KEY=${SECRETO}:latest" \
+  --set-secrets "ANTHROPIC_API_KEY=${SECRETO}:latest,AGENT_API_KEY=${SECRETO_AGENTE}:latest" \
   --set-env-vars "MODEL=claude-opus-5,EFFORT=low,BQ_PROJECT=${BQ_PROJECT:-},BQ_DATASET=${BQ_DATASET:-}" \
   --quiet
 
 URL="$(gcloud run services describe "$SERVICIO" \
   --project "$PROYECTO" --region "$REGION" --format='value(status.url)')"
 
-# La tarjeta de agente publica esta URL, asi que tiene que ser la real.
+# La tarjeta de agente publica esta URL y el transporte MCP valida contra ella,
+# asi que el segundo paso no es opcional: tiene que ser la URL real.
 echo
 echo "==> Fijando PUBLIC_BASE_URL=${URL}"
 gcloud run services update "$SERVICIO" \
   --project "$PROYECTO" --region "$REGION" \
   --update-env-vars "PUBLIC_BASE_URL=${URL}" --quiet >/dev/null
 
+TOKEN="$(gcloud secrets versions access latest --secret="$SECRETO_AGENTE" --project "$PROYECTO")"
+
 echo
 echo "======================================================================"
 echo "  Desplegado"
 echo "======================================================================"
-echo "  URL base a registrar en la plataforma:"
-echo "      ${URL}/v1"
+echo "  Registro en la plataforma del reto"
+echo "    Boton 'Importar desde tarjeta de agente':"
+echo "        ${URL}"
+echo "    O a mano -- URL base:"
+echo "        ${URL}/v1"
+echo "    Estado de la conversacion:"
+echo "        Reproducir transcripcion (sin estado)"
+echo "    Clave de API:"
+echo "        ${TOKEN}"
 echo
-echo "  Tarjeta de agente (boton 'Importar desde tarjeta de agente'):"
-echo "      ${URL}"
+echo "  Servidor MCP (para cualquier otro agente):"
+echo "        ${URL}/mcp"
 echo
-echo "  Verificacion rapida:"
-echo "      curl ${URL}/healthz"
+echo "  Verificacion:"
+echo "        curl ${URL}/healthz"
+echo "        curl -X POST ${URL}/v1/responses \\"
+echo "          -H 'Authorization: Bearer ${TOKEN}' \\"
+echo "          -H 'Content-Type: application/json' \\"
+echo "          -d '{\"input\":\"¿Que experiencia tiene con LLMs?\"}'"
 echo "======================================================================"

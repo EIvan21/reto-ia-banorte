@@ -125,13 +125,27 @@ el CV" un término que **parezca nombre de tecnología** (mayúscula a media fra
 conocida). Marcar vocabulario común llevaría al agente a negar experiencia en "carrera" o
 "desafiante", que es peor que no avisar nada.
 
-### 6. Privacidad: el teléfono no está en el repositorio
+### 6. Autenticación donde protege algo, y sólo ahí
+
+`/v1/responses` exige `Authorization: Bearer`. El token se genera en el despliegue, vive en
+Secret Manager y se registra en el campo "Clave de API" de la plataforma.
+
+`/mcp` queda **abierto a propósito**, y la diferencia es la que importa: en `/v1/responses` cada
+petición gasta una llamada al modelo, así que sin auth cualquiera que descubra la URL consume la
+API key. `/mcp` no llama al modelo — sólo lee un CV que de todos modos es público, con costo cero
+por petición. Cerrarlo no protegería nada y rompería el objetivo de que cualquier agente pueda
+consultar el perfil.
+
+`/healthz` y `/.well-known/agent-card.json` también quedan abiertos: la plataforma necesita leer
+la tarjeta **sin credenciales** para poder importarla.
+
+### 7. Privacidad: el teléfono no está en el repositorio
 
 El repo es público y el CV original trae un teléfono. **No está en `cv.json`** — el agente sólo
 comparte correo, LinkedIn, GitHub y sitio web. La redacción de PII en la salida es la segunda
 barrera, no la primera. Hay una prueba que falla si alguien lo vuelve a meter al JSON.
 
-### 7. Observabilidad que cierra el círculo
+### 8. Observabilidad que cierra el círculo
 
 Cada turno emite un evento con latencia, tokens, herramientas usadas, citas devueltas, etiquetas
 de guardrail y si la respuesta quedó fundamentada. Va a dos destinos: stdout como JSON de una
@@ -144,7 +158,7 @@ del agente es una contribución open source propia, no una herramienta traída d
 El sink de BigQuery corre en un hilo aparte y es best-effort. **La observabilidad nunca debe
 agregar latencia ni tumbar una respuesta al usuario.**
 
-### 8. El mismo CV por dos protocolos
+### 9. El mismo CV por dos protocolos
 
 Además del endpoint de Open Responses, el servicio expone un **servidor MCP** en `/mcp` con
 exactamente las mismas seis herramientas. Un solo despliegue atiende los dos protocolos.
@@ -174,7 +188,7 @@ silencio:
 El SDK de Python de MCP 2.x renombró `FastMCP` a `MCPServer` y cambió `inputSchema` por
 `input_schema`. El código sigue la API 2.x.
 
-### 9. Tercera persona, a propósito
+### 10. Tercera persona, a propósito
 
 El agente habla de Edher en tercera persona ("Edher trabajó en…"), no se hace pasar por él.
 Quien consulta debe saber en todo momento que habla con un agente. Suena a detalle de tono, pero
