@@ -7,6 +7,7 @@ en un CV estructurado: **no inventa datos y dice explícitamente cuándo algo no
 
 ```
 Plataforma Reto IA ──POST /v1/responses (SSE)──►  Cloud Run · FastAPI
+Cualquier agente   ──POST /mcp (streamable)────►        │
                                                         │
                     ┌───────────────────────────────────┼───────────────────────┐
                     ▼                                   ▼                       ▼
@@ -143,7 +144,37 @@ del agente es una contribución open source propia, no una herramienta traída d
 El sink de BigQuery corre en un hilo aparte y es best-effort. **La observabilidad nunca debe
 agregar latencia ni tumbar una respuesta al usuario.**
 
-### 8. Tercera persona, a propósito
+### 8. El mismo CV por dos protocolos
+
+Además del endpoint de Open Responses, el servicio expone un **servidor MCP** en `/mcp` con
+exactamente las mismas seis herramientas. Un solo despliegue atiende los dos protocolos.
+
+Esto no costó un rediseño, y esa es justo la prueba de que la separación estaba bien puesta:
+las herramientas viven en `tools.py` sin saber nada del transporte, así que agregar un protocolo
+fue un archivo nuevo (`app/mcp_server.py`) que las envuelve. Hay una prueba que falla si los dos
+protocolos dejan de exponer el mismo conjunto de herramientas.
+
+También corre por stdio para conectarlo a un cliente MCP local:
+
+```bash
+python -m app.mcp_server
+```
+
+**Dos cosas que valen la pena mencionar en la demo**, porque no son obvias y las dos rompen en
+silencio:
+
+1. **El lifespan de la sub-app.** Al montar una app de Starlette dentro de FastAPI, su lifespan
+   **no** corre solo, y el gestor de sesiones de MCP depende de él. Sin encadenarlo, `/mcp`
+   devuelve 500 en la primera petición mientras el endpoint principal sigue funcionando — así
+   que el fallo pasa desapercibido hasta que alguien prueba MCP.
+2. **Protección contra DNS rebinding.** Viene activada por defecto y rechaza cabeceras `Host`
+   inesperadas. En Cloud Run el `Host` es el dominio `*.run.app` asignado al servicio, así que
+   la lista de hosts permitidos se deriva de `PUBLIC_BASE_URL` en vez de abrir el comodín.
+
+El SDK de Python de MCP 2.x renombró `FastMCP` a `MCPServer` y cambió `inputSchema` por
+`input_schema`. El código sigue la API 2.x.
+
+### 9. Tercera persona, a propósito
 
 El agente habla de Edher en tercera persona ("Edher trabajó en…"), no se hace pasar por él.
 Quien consulta debe saber en todo momento que habla con un agente. Suena a detalle de tono, pero
@@ -251,6 +282,7 @@ Usa **"Importar desde tarjeta de agente"** con la URL raíz del servicio: la pla
 
 | Endpoint | Para qué |
 |---|---|
+| `POST /mcp` | Servidor MCP con las mismas herramientas, para cualquier otro agente |
 | `GET /healthz` | Sonda de vida. Valida que el CV cargue, no sólo que el proceso viva |
 | `GET /.well-known/agent-card.json` | Tarjeta A2A para el registro automático |
 | `GET /` | Página con instrucciones de uso |
@@ -271,6 +303,7 @@ app/
   main.py            FastAPI: /v1/responses, tarjeta de agente, salud
   openresponses.py   Serialización del protocolo (no-streaming y SSE)
   agent.py           Loop agéntico con Claude
+  mcp_server.py      Las mismas herramientas por MCP (HTTP montado + stdio)
   tools.py           Seis herramientas sobre el CV + búsqueda
   guardrails.py      Entrada (inyección, tamaño) y salida (PII, fundamentación)
   telemetry.py       Logging estructurado + sink de BigQuery
@@ -293,8 +326,6 @@ Honestidad sobre los límites de lo entregado:
 
 - **Evaluación con juez LLM.** Las aserciones actuales son por subcadena, que es frágil ante
   paráfrasis. Un juez calificando fundamentación y tono daría una señal mejor.
-- **Servidor MCP.** Las herramientas ya están aisladas del transporte; exponerlas por MCP para
-  que otros agentes consulten el CV es un archivo más.
 - **Caché semántica.** Los reclutadores hacen las mismas cinco preguntas. Cachear por intención
   bajaría costo y latencia de forma notable.
 - **Trazas distribuidas.** Hoy hay una métrica por turno. OpenTelemetry con un span por llamada

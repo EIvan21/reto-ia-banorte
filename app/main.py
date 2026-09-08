@@ -9,9 +9,10 @@ Endpoints:
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import time
-from typing import Iterator
+from typing import AsyncIterator, Iterator
 
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
@@ -28,7 +29,42 @@ from .config import (
 )
 from .telemetry import registrar, registrar_error, registrar_turno
 
-app = FastAPI(title=AGENT_NAME, version=AGENT_VERSION, docs_url="/docs")
+# El servidor MCP es opcional: si el paquete no esta instalado, el agente sigue
+# funcionando con el endpoint de Open Responses y solo se anota en el log.
+try:
+    from .mcp_server import app_asgi as _app_mcp
+
+    APP_MCP = _app_mcp()
+except Exception as exc:  # noqa: BLE001
+    APP_MCP = None
+    _MOTIVO_SIN_MCP = str(exc)
+
+
+@contextlib.asynccontextmanager
+async def ciclo_de_vida(_: FastAPI) -> AsyncIterator[None]:
+    """Arranca el gestor de sesiones de MCP junto con la app.
+
+    Al montar una sub-app de Starlette en FastAPI su lifespan NO corre solo, y el
+    transporte streamable HTTP de MCP depende de el. Sin esto, /mcp responde 500
+    en la primera peticion y el endpoint de Open Responses funciona igual, asi que
+    el fallo pasa desapercibido hasta que alguien prueba MCP.
+    """
+    if APP_MCP is None:
+        registrar("mcp_deshabilitado", motivo=_MOTIVO_SIN_MCP)
+        yield
+        return
+
+    async with APP_MCP.router.lifespan_context(APP_MCP):
+        registrar("mcp_habilitado", ruta="/mcp")
+        yield
+
+
+app = FastAPI(
+    title=AGENT_NAME, version=AGENT_VERSION, docs_url="/docs", lifespan=ciclo_de_vida
+)
+
+if APP_MCP is not None:
+    app.mount("/mcp", APP_MCP)
 
 CABECERAS_SSE = {
     "Cache-Control": "no-cache",
@@ -302,7 +338,15 @@ async def tarjeta_agente():
                     "url": f"{PUBLIC_BASE_URL}/v1",
                     "protocolBinding": "https://openresponses.org/v1",
                     "protocolVersion": "1.0",
-                }
+                },
+                # Las mismas herramientas por MCP. La plataforma del reto usa la
+                # interfaz de arriba; esta permite que cualquier otro agente
+                # consulte el CV directamente.
+                {
+                    "url": f"{PUBLIC_BASE_URL}/mcp",
+                    "protocolBinding": "https://modelcontextprotocol.io",
+                    "protocolVersion": "2025-06-18",
+                },
             ],
         }
     )
@@ -348,8 +392,9 @@ async def inicio():
 <h1>{AGENT_NAME}</h1>
 <p class="sub">Agente conversacional compatible con Open Responses sobre el CV de
 {cv['perfil']['nombre']} &mdash; {cv['perfil']['titular']}.</p>
-<h2>Endpoint</h2>
-<pre>POST {PUBLIC_BASE_URL}/v1/responses</pre>
+<h2>Dos protocolos, las mismas herramientas</h2>
+<pre>POST {PUBLIC_BASE_URL}/v1/responses   &larr; Open Responses
+POST {PUBLIC_BASE_URL}/mcp            &larr; MCP (streamable HTTP)</pre>
 <p>Registrable en la plataforma con la tarjeta de agente en
 <code>/.well-known/agent-card.json</code>.</p>
 <h2>Que preguntarle</h2>

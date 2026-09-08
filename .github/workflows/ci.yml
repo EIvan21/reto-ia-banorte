@@ -38,4 +38,9 @@ jobs:
           done
           curl -sf http://localhost:8080/healthz | tee /dev/stderr | grep -q '"estado":"ok"'
           curl -sf http://localhost:8080/.well-known/agent-card.json | grep -q openresponses.org
+
+          # El servidor MCP falla en silencio si el lifespan de la sub-app no se
+          # encadena: el endpoint principal sigue vivo y nadie se entera.
+          curl -sf -X POST http://localhost:8080/mcp/             -H "Content-Type: application/json"             -H "Accept: application/json, text/event-stream"             -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1.0"}}}'             | tee /dev/stderr | grep -q '"serverInfo"'
+
           docker rm -f cv-agent-ci

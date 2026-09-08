@@ -348,3 +348,65 @@ def test_hay_cobertura_adversarial_suficiente():
     assert len(adversariales) >= 10, (
         f"solo {len(adversariales)} casos adversariales; se esperan al menos 10"
     )
+
+
+# --- Servidor MCP -----------------------------------------------------------
+# El mismo CV servido por un segundo protocolo. Estas pruebas construyen el
+# servidor en memoria: no hace falta levantar nada ni llamar al modelo.
+
+
+def _herramientas_mcp():
+    import asyncio
+
+    from app.mcp_server import crear_servidor
+
+    return asyncio.run(crear_servidor().list_tools())
+
+
+def test_el_servidor_mcp_expone_las_mismas_herramientas():
+    nombres_mcp = {h.name for h in _herramientas_mcp()}
+    nombres_openresponses = {d["name"] for d in tools.TOOL_DEFS}
+    assert nombres_mcp == nombres_openresponses, (
+        "los dos protocolos deben exponer exactamente las mismas herramientas; "
+        f"solo en MCP: {nombres_mcp - nombres_openresponses}, "
+        f"solo en Open Responses: {nombres_openresponses - nombres_mcp}"
+    )
+
+
+def test_toda_herramienta_mcp_esta_descrita():
+    """Sin descripcion, el agente que consuma el MCP no sabe cuando usarla."""
+    for herramienta in _herramientas_mcp():
+        assert herramienta.description, f"{herramienta.name} no tiene descripcion"
+        assert len(herramienta.description) > 40, (
+            f"{herramienta.name}: descripcion demasiado corta para ser util"
+        )
+
+
+def test_las_herramientas_mcp_declaran_su_esquema():
+    por_nombre = {h.name: h for h in _herramientas_mcp()}
+    assert "consulta" in por_nombre["buscar_cv"].input_schema["properties"]
+    assert "descripcion_vacante" in por_nombre["evaluar_vacante"].input_schema["properties"]
+
+    # Los docstrings de Python no llegan al esquema JSON. Sin descripcion por
+    # parametro, un agente consumidor no sabe que valores acepta 'seccion'.
+    propiedades = por_nombre["buscar_cv"].input_schema["properties"]
+    for parametro in ("consulta", "seccion"):
+        assert propiedades[parametro].get("description"), (
+            f"buscar_cv.{parametro} sin descripcion en el esquema MCP"
+        )
+    assert "intereses" in propiedades["seccion"]["description"]
+
+
+def test_los_hosts_permitidos_incluyen_el_dominio_publico():
+    """La proteccion contra DNS rebinding rechaza cabeceras Host inesperadas:
+    si el dominio de Cloud Run no esta en la lista, /mcp deja de responder."""
+    from urllib.parse import urlparse
+
+    from app.config import PUBLIC_BASE_URL
+    from app.mcp_server import _hosts_permitidos
+
+    hosts = _hosts_permitidos()
+    assert "localhost:8080" in hosts
+    publico = urlparse(PUBLIC_BASE_URL).netloc
+    if publico:
+        assert publico in hosts
