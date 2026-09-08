@@ -1,0 +1,9 @@
+# Normaliza saltos de linea. Los scripts de shell y el Dockerfile DEBEN quedar en
+# LF: con CRLF, Linux falla con "bad interpreter" al ejecutarlos, y este proyecto
+# se despliega desde una maquina Windows hacia contenedores Linux.
+* text=auto eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary

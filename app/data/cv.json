@@ -1,0 +1,218 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "actualizado": "2026-09-08",
+    "idioma_fuente": "es",
+    "nota": "Fuente de verdad del agente. Cada entrada tiene un 'id' estable que las herramientas devuelven como cita verificable. No agregar datos que no esten respaldados por el CV real."
+  },
+
+  "perfil": {
+    "id": "perfil",
+    "nombre": "Edher Ivan Diaz Salazar",
+    "titular": "Analytics Engineer",
+    "especialidad": "Looker, LookML, BigQuery y Google Cloud",
+    "ubicacion": "Ciudad de Mexico, Mexico",
+    "anios_experiencia": 4,
+    "disponibilidad_remoto": true,
+    "idiomas": [
+      { "idioma": "Espanol", "nivel": "Nativo" },
+      { "idioma": "Ingles", "nivel": "Profesional" }
+    ],
+    "resumen": "Analytics Engineer con mas de 4 anios disenando soluciones de Looker y BigQuery sobre Google Cloud. Certificado Google Cloud Associate Cloud Engineer y autor principal de skills de agentes de IA y bloques de Looker publicados en la organizacion looker-open-source de Google. Redujo 30% el tiempo de desarrollo de LookML automatizando la generacion de codigo con agentes LLM, y bajo 30% el sobreinventario de un cliente con un modelo de pronostico. Especializado en modelado semantico con LookML, pipelines de datos y generacion de datos sinteticos."
+  },
+
+  "contacto": {
+    "id": "contacto",
+    "email": "edher.diaz21@gmail.com",
+    "linkedin": "https://linkedin.com/in/edherdiaz",
+    "github": "https://github.com/heyedher",
+    "sitio_web": "https://edherivan.com",
+    "_nota_privacidad": "El telefono NO se incluye aqui de forma intencional: este repositorio es publico. El agente solo comparte email, LinkedIn, GitHub y sitio web."
+  },
+
+  "habilidades": [
+    {
+      "id": "hab-bi",
+      "categoria": "BI y Analitica",
+      "items": ["Looker", "LookML", "Looker Studio", "Modelado semantico y dimensional (Kimball)", "Diseno de dashboards"],
+      "contexto": "Usadas a diario durante mas de 4 anios en los tres empleos: soporte tecnico especializado de Looker en Infosys, consultoria en GTEC e ingenieria en GlobalLogic."
+    },
+    {
+      "id": "hab-cloud",
+      "categoria": "Datos y Nube",
+      "items": ["BigQuery", "SQL", "Python", "Dataflow", "PySpark", "Vertex AI", "Cloud Storage"],
+      "contexto": "Google Cloud es la plataforma principal de trabajo. Certificado Associate Cloud Engineer. BigQuery y SQL se usan en practicamente todos los proyectos; Dataflow en pipelines de ingesta en GTEC."
+    },
+    {
+      "id": "hab-ds",
+      "categoria": "Ciencia de Datos",
+      "items": ["pandas", "NumPy", "scikit-learn", "Matplotlib", "Pronostico (forecasting)", "BigQuery ML"],
+      "contexto": "Aplicadas en el modelo de pronostico de inventario en GTEC, en los modelos de propension del bloque GA Four y en el proyecto final del diplomado de ciencia de datos."
+    },
+    {
+      "id": "hab-ia",
+      "categoria": "IA y Herramientas",
+      "items": ["Agentes LLM (Gemini, Claude Code, Codex, Cursor)", "Ingenieria de prompts", "Git", "Jupyter", "FastAPI"],
+      "contexto": "Nucleo del trabajo actual en GlobalLogic: construccion de integraciones de agentes LLM y frameworks de prompts que generan y refactorizan LookML automaticamente. Tambien es la base de las dos skills de agentes publicadas en looker-open-source."
+    }
+  ],
+
+  "experiencia": [
+    {
+      "id": "exp-globallogic",
+      "puesto": "Google Cloud Engineer",
+      "empresa": "GlobalLogic",
+      "inicio": "2024-08",
+      "fin": null,
+      "actual": true,
+      "periodo_texto": "Agosto 2024 - Presente",
+      "tecnologias": ["Gemini", "Claude Code", "Codex", "Cursor", "LookML", "Python", "BigQuery", "Google Cloud"],
+      "logros": [
+        "Construyo integraciones de agentes LLM y frameworks de prompts (Gemini, Claude Code, Codex, Cursor) que generan y refactorizan LookML automaticamente, acelerando la entrega de dashboards.",
+        "Diseno una metodologia LookML/Python/BigQuery adoptada en varios proyectos, que redujo 30% el tiempo de desarrollo.",
+        "Construyo un generador de datos sinteticos en Python/BigQuery para construccion de dashboards y demos, que redujo 40% el tiempo de creacion de datos.",
+        "Lidero talleres con clientes para definir KPIs, drill-downs y visualizaciones de dashboards de marketing llevados a produccion."
+      ]
+    },
+    {
+      "id": "exp-gtec",
+      "puesto": "Looker Consultant",
+      "empresa": "GTEC",
+      "inicio": "2023-12",
+      "fin": "2024-08",
+      "actual": false,
+      "periodo_texto": "Diciembre 2023 - Agosto 2024",
+      "tecnologias": ["Looker", "Python", "BigQuery", "Dataflow"],
+      "logros": [
+        "Implemento un modelo de pronostico de inventario que redujo 30% el sobreinventario del cliente.",
+        "Se hizo cargo de la ingesta de datos, la visualizacion y el analisis de KPIs con Python, BigQuery, Dataflow y Looker.",
+        "Desarrollo y mantuvo modelos de datos para analitica predictiva, mejorando el desempeno de los dashboards."
+      ]
+    },
+    {
+      "id": "exp-infosys",
+      "puesto": "Technical Support Specialist, Google Looker",
+      "empresa": "Infosys",
+      "inicio": "2021-12",
+      "fin": "2023-12",
+      "actual": false,
+      "periodo_texto": "Diciembre 2021 - Diciembre 2023",
+      "tecnologias": ["Looker", "PostgreSQL", "MySQL", "SQL"],
+      "logros": [
+        "Resolvio mas de 400 casos de analitica de datos para clientes de Looker, elevando la satisfaccion promedio del cliente a 4.5/5.",
+        "Implemento politicas de gobierno de datos en multiples instancias de Looker, asegurando cumplimiento y calidad de datos.",
+        "Diseno dashboards para clientes y optimizo conexiones de Looker a PostgreSQL, MySQL y otras bases de datos."
+      ]
+    }
+  ],
+
+  "proyectos": [
+    {
+      "id": "proy-looker-architect",
+      "nombre": "Looker Architect",
+      "rol": "Autor principal",
+      "organizacion": "looker-open-source (Google)",
+      "tipo": "Skill de agente de IA",
+      "descripcion": "Skill de agente de IA que disena y genera el andamiaje de proyectos LookML limpios y bien estructurados.",
+      "tecnologias": ["LookML", "Agentes LLM", "Ingenieria de prompts"],
+      "publico": true
+    },
+    {
+      "id": "proy-looker-performance",
+      "nombre": "Looker Performance Optimizer",
+      "rol": "Autor principal",
+      "organizacion": "looker-open-source (Google)",
+      "tipo": "Skill de agente de IA",
+      "descripcion": "Skill de agente de IA que genera y refactoriza LookML orientado a desempeno.",
+      "tecnologias": ["LookML", "Agentes LLM", "Optimizacion de consultas"],
+      "publico": true
+    },
+    {
+      "id": "proy-agent-analytics",
+      "nombre": "Agent Analytics Block",
+      "rol": "Autor principal",
+      "organizacion": "looker-open-source (Google)",
+      "tipo": "Bloque de Looker",
+      "descripcion": "Bloque de Looker para monitorear y optimizar agentes de IA generativa sobre BigQuery Agent Analytics. Es la pieza de observabilidad que este mismo agente de CV reutiliza: su telemetria se escribe en BigQuery y se monitorea con este bloque.",
+      "tecnologias": ["Looker", "LookML", "BigQuery", "Observabilidad de agentes GenAI"],
+      "publico": true
+    },
+    {
+      "id": "proy-ga-four",
+      "nombre": "GA Four Block",
+      "rol": "Contribuidor",
+      "organizacion": "looker-open-source (Google)",
+      "tipo": "Bloque de Looker",
+      "descripcion": "Bloque de GA4 con sesionizacion incremental, modelos de propension en BigQuery ML y dashboards de cohortes.",
+      "tecnologias": ["Looker", "LookML", "BigQuery ML", "GA4"],
+      "publico": true
+    },
+    {
+      "id": "proy-cv-agent",
+      "nombre": "Agente de CV conversacional",
+      "rol": "Autor",
+      "organizacion": "Proyecto personal / Reto IA Banorte",
+      "tipo": "Sistema agentico",
+      "descripcion": "Este mismo agente. Servidor compatible con el protocolo Open Responses desplegado en Cloud Run, con Claude como modelo, herramientas sobre un CV estructurado, guardrails de entrada y salida, suite de evaluacion automatizada y telemetria en BigQuery monitoreada con el Agent Analytics Block.",
+      "tecnologias": ["Python", "FastAPI", "Claude", "Open Responses", "Cloud Run", "BigQuery", "Docker"],
+      "publico": true
+    }
+  ],
+
+  "open_source": {
+    "id": "open-source",
+    "organizacion": "looker-open-source (Google)",
+    "bloques_publicados": 30,
+    "pull_requests_mergeados": 45,
+    "descripcion": "Contribuidor a la organizacion looker-open-source de Google, con mas de 30 bloques de Looker y 45 pull requests mergeados. Autor principal de tres de esos proyectos."
+  },
+
+  "educacion": [
+    {
+      "id": "edu-mna",
+      "grado": "Maestria en Inteligencia Artificial Aplicada",
+      "institucion": "Tecnologico de Monterrey",
+      "periodo": "En curso",
+      "en_curso": true
+    },
+    {
+      "id": "edu-diplomado",
+      "grado": "Diplomado en Ciencia de Datos",
+      "institucion": "Skills Tech, Mexico",
+      "periodo": "2022 - 2023",
+      "en_curso": false,
+      "detalle": "Proyecto final: pronostico de precios de electricidad para el mercado mayorista de Mexico con Python y SQL, aplicando metodologia Kimball."
+    },
+    {
+      "id": "edu-licenciatura",
+      "grado": "Licenciatura en Ingenieria en Energia",
+      "institucion": "Universidad Autonoma Metropolitana",
+      "periodo": "2016 - 2021",
+      "en_curso": false,
+      "detalle": "Medalla al Merito Universitario por el promedio mas alto de la generacion."
+    }
+  ],
+
+  "certificaciones": [
+    { "id": "cert-ace", "nombre": "Associate Cloud Engineer", "emisor": "Google Cloud", "anio": 2026 },
+    { "id": "cert-genai", "nombre": "Generative AI Leader", "emisor": "Google Cloud", "anio": 2025 },
+    { "id": "cert-de", "nombre": "Data Engineer", "emisor": "DataCamp", "anio": 2025 }
+  ],
+
+  "preferencias_rol": {
+    "id": "preferencias-rol",
+    "_revisar": "BORRADOR redactado a partir del perfil del CV. Edher: revisa y ajusta este bloque; es lo unico que no proviene textualmente del CV.",
+    "roles_de_interes": [
+      "AI Engineer / Agent Engineer",
+      "Analytics Engineer senior",
+      "Data / AI Engineer en Google Cloud"
+    ],
+    "que_busca": "Roles donde converjan la ingenieria de datos sobre Google Cloud y la construccion de sistemas agenticos con LLM: disenar el contexto y las herramientas que consumen los agentes, y llevarlos a produccion con evaluacion y observabilidad reales.",
+    "fortalezas_diferenciadoras": [
+      "Combinacion poco comun de modelado semantico serio (LookML, Kimball) con construccion de agentes LLM en produccion.",
+      "Autoria principal de open source dentro de la organizacion de Google, no solo consumo de herramientas.",
+      "Experiencia de cara al cliente: talleres de KPIs y mas de 400 casos de soporte resueltos."
+    ],
+    "modalidad": "Abierto a remoto e hibrido en Ciudad de Mexico."
+  }
+}
