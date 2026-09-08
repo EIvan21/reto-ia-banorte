@@ -35,7 +35,8 @@ _TELEFONO_FICTICIO = "+52 55 1234 5678"
 def test_cv_carga_y_tiene_las_secciones_esperadas():
     cv = load_cv()
     for seccion in ("perfil", "contacto", "habilidades", "experiencia", "proyectos",
-                    "educacion", "certificaciones", "open_source", "preferencias_rol"):
+                    "educacion", "certificaciones", "open_source", "preferencias_rol",
+                    "intereses"):
         assert seccion in cv, f"falta la seccion {seccion}"
 
 
@@ -78,6 +79,9 @@ def test_el_cv_no_contiene_telefono():
         ("¿Qué tipo de rol busca?", "preferencias-rol"),
         ("Háblame de su trabajo en Infosys", "exp-infosys"),
         ("¿Qué estudió en la universidad?", "edu-licenciatura"),
+        ("¿Cuáles son sus hobbies?", "intereses"),
+        ("¿Toca algún instrumento?", "intereses"),
+        ("¿Le interesa trabajar con MCP?", "preferencias-rol"),
     ],
 )
 def test_la_busqueda_recupera_la_entrada_correcta(pregunta, id_esperado):

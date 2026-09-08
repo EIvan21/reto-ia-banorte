@@ -201,18 +201,57 @@
 
   "preferencias_rol": {
     "id": "preferencias-rol",
-    "_revisar": "BORRADOR redactado a partir del perfil del CV. Edher: revisa y ajusta este bloque; es lo unico que no proviene textualmente del CV.",
+    "enfoque": "Inteligencia artificial. Edher quiere que su siguiente rol sea de IA de tiempo completo, no de analitica con IA como accesorio.",
     "roles_de_interes": [
       "AI Engineer / Agent Engineer",
-      "Analytics Engineer senior",
-      "Data / AI Engineer en Google Cloud"
+      "Ingeniero de agentes LLM: construccion, despliegue y monitoreo en produccion",
+      "Desarrollo de servidores MCP y de herramientas que consumen los agentes",
+      "Data / AI Engineer sobre Google Cloud"
     ],
-    "que_busca": "Roles donde converjan la ingenieria de datos sobre Google Cloud y la construccion de sistemas agenticos con LLM: disenar el contexto y las herramientas que consumen los agentes, y llevarlos a produccion con evaluacion y observabilidad reales.",
+    "que_busca": "Un rol centrado en construir, desplegar y operar agentes de modelos de lenguaje. Concretamente: llevar agentes a produccion y monitorearlos de verdad, crear servidores MCP, disenar las skills y los flujos con los que trabajan los agentes, y mejorar agentes existentes midiendo si de hecho mejoraron.",
+    "areas_especificas": [
+      "Despliegue y monitoreo de agentes LLM en produccion",
+      "Creacion de servidores MCP (Model Context Protocol)",
+      "Diseno de skills y de flujos de trabajo entre agentes",
+      "Mejora iterativa de agentes con evaluacion medible",
+      "Observabilidad de sistemas de IA generativa"
+    ],
     "fortalezas_diferenciadoras": [
       "Combinacion poco comun de modelado semantico serio (LookML, Kimball) con construccion de agentes LLM en produccion.",
       "Autoria principal de open source dentro de la organizacion de Google, no solo consumo de herramientas.",
+      "Ya construyo la pieza de observabilidad de agentes GenAI que la mayoria apenas consume: el Agent Analytics Block.",
       "Experiencia de cara al cliente: talleres de KPIs y mas de 400 casos de soporte resueltos."
     ],
     "modalidad": "Abierto a remoto e hibrido en Ciudad de Mexico."
+  },
+
+  "intereses": {
+    "id": "intereses",
+    "_nota": "Lado humano del perfil. Se responde solo si preguntan; no se mete a la fuerza en respuestas profesionales.",
+    "personales": [
+      {
+        "nombre": "Magia",
+        "detalle": "Hace trucos de magia. Es una aficion de precision y de practica repetida, y de leer bien a quien tiene enfrente."
+      },
+      {
+        "nombre": "Guitarra",
+        "detalle": "Toca la guitarra."
+      },
+      {
+        "nombre": "Correr",
+        "detalle": "Sale a correr con regularidad."
+      },
+      {
+        "nombre": "Gimnasio",
+        "detalle": "Entrena en el gimnasio de forma constante."
+      }
+    ],
+    "tecnicos": [
+      {
+        "nombre": "Creacion de contenido visual con IA",
+        "detalle": "Produce contenido corto para TikTok con modelos de generacion de video como Veo y Sora. Es su via para mantenerse al dia con los modelos generativos por fuera del trabajo, no solo con los de texto.",
+        "_revisar": "Edher: confirma la lista de modelos de video. Entendi Veo y Sora, y un tercero que no alcance a distinguir en el audio (¿Seedance? ¿Kling?)."
+      }
+    ]
   }
 }

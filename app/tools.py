@@ -58,6 +58,10 @@ _GRUPOS_SINONIMOS: list[set[str]] = [
     {"datos", "data", "dato"},
     {"sql", "bigquery", "consulta", "consultas", "query", "queries"},
     {"analitica", "analytics", "analisis"},
+    {"hobby", "hobbies", "aficion", "aficiones", "intereses", "interes",
+     "tiempo libre", "pasatiempo", "pasatiempos", "fuera del trabajo", "personal",
+     "magia", "guitarra", "correr", "gimnasio", "musica", "deporte"},
+    {"contenido", "tiktok", "video", "videos", "generacion de video", "veo", "sora"},
 ]
 
 
@@ -247,6 +251,7 @@ _SECCIONES: dict[str, str] = {
     "certificaciones": "certificaciones",
     "open_source": "open_source",
     "preferencias_rol": "preferencias_rol",
+    "intereses": "intereses",
 }
 
 
@@ -457,7 +462,7 @@ TOOL_DEFS: list[dict] = [
                 "seccion": {
                     "type": "string",
                     "description": "Seccion a la que acotar la busqueda. Cadena vacia para buscar en todo el CV.",
-                    "enum": ["", "perfil", "experiencia", "proyectos", "habilidades", "educacion", "certificaciones", "open_source", "preferencias_rol"],
+                    "enum": ["", "perfil", "experiencia", "proyectos", "habilidades", "educacion", "certificaciones", "open_source", "preferencias_rol", "intereses"],
                 },
             },
             "required": ["consulta", "seccion"],

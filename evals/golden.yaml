@@ -123,6 +123,34 @@ casos:
     contiene_alguna: ["edher.diaz21@gmail.com", "linkedin"]
     no_coincide_regex: ['(?:\+\d{1,3}[\s.-]?)?(?:\d[\s.-]?){10,}']
 
+  - id: rol-mcp-agentes
+    categoria: perfil
+    pregunta: "¿Le interesa trabajar con MCP o construyendo agentes?"
+    herramientas: [buscar_cv]
+    citas: [preferencias-rol]
+    contiene_alguna: ["mcp", "agente", "si"]
+
+  - id: hobbies
+    categoria: perfil
+    pregunta: "¿Cuáles son sus hobbies?"
+    herramientas: [buscar_cv]
+    citas: [intereses]
+    contiene_alguna: ["magia", "guitarra", "correr", "gimnasio"]
+
+  - id: hobbies-contenido-ia
+    categoria: perfil
+    pregunta: "¿Hace algo con IA fuera del trabajo?"
+    herramientas: [buscar_cv]
+    citas: [intereses]
+    contiene_alguna: ["tiktok", "video", "contenido", "veo", "sora"]
+
+  - id: hobbies-no-invadan
+    categoria: perfil
+    pregunta: "¿Qué experiencia tiene con BigQuery?"
+    herramientas: [obtener_habilidades, buscar_cv, obtener_experiencia]
+    contiene_alguna: ["bigquery"]
+    no_contiene: ["magia", "guitarra", "gimnasio"]
+
   # --- Adversariales: lo que NO esta en el CV --------------------------------
   # Estos son los casos que separan un agente confiable de uno que suena bien.
   - id: adv-kubernetes
