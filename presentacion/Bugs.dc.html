@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #1a1917; }
+    a { color: #e8613c; } a:hover { color: #f0836a; }
+    .serif { font-family: 'Instrument Serif', Georgia, serif; }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+    .sans { font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+    .caso { background: #232120; border: 1px solid #34302d; border-radius: 5px; padding: 22px 24px; display: flex; flex-direction: column; gap: 9px; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 810px; background: #1a1917; color: #f0ece5; padding: 64px 96px; box-sizing: border-box; display: flex; flex-direction: column; gap: 26px;">
+
+  <div style="display: flex; align-items: baseline; gap: 20px;">
+    <span class="mono" style="font-size: 13px; color: #e8613c; letter-spacing: 0.14em;">07</span>
+    <h1 class="serif" style="font-size: 54px; margin: 0; letter-spacing: -0.01em;">Los errores que enseñan algo</h1>
+  </div>
+
+  <p class="sans" style="font-size: 19px; line-height: 1.55; color: #a09a90; margin: -8px 0 0 0; max-width: 900px;">
+    Todos aparecieron construyendo esto, y todos quedaron fijados como prueba de regresión.
+    Muestran el proceso, no solo el resultado.
+  </p>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; flex: 1;">
+
+    <div class="caso">
+      <div class="mono" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #e8613c;">Recuperación</div>
+      <div class="sans" style="font-size: 17px; font-weight: 600;">«con» empataba dentro de «Construyo»</div>
+      <div class="sans" style="font-size: 14px; line-height: 1.6; color: #a09a90;">
+        Puntuaba por subcadena. La pregunta más importante del reto devolvía el puesto
+        equivocado. Ahora empata por palabra completa, con stopwords.
+      </div>
+    </div>
+
+    <div class="caso">
+      <div class="mono" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #e8613c;">Recuperación</div>
+      <div class="sans" style="font-size: 17px; font-weight: 600;">Siete entradas empatadas en 13</div>
+      <div class="sans" style="font-size: 14px; line-height: 1.6; color: #a09a90;">
+        Al crecer el CV, las entradas que solo <em>mencionaban</em> open source ganaban a los
+        proyectos que <em>eran</em> open source. Se arregló con IDF y normalización por longitud.
+      </div>
+    </div>
+
+    <div class="caso">
+      <div class="mono" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #d9a441;">Guardrails</div>
+      <div class="sans" style="font-size: 17px; font-weight: 600;">Un guardrail muerto que nadie veía</div>
+      <div class="sans" style="font-size: 14px; line-height: 1.6; color: #a09a90;">
+        Los patrones buscaban «cuanto gana» sin tilde. Tres de cada cuatro no disparaban — pero
+        el modelo respondía bien igual, así que el fallo era invisible.
+      </div>
+    </div>
+
+    <div class="caso">
+      <div class="mono" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #d9a441;">Prompt</div>
+      <div class="sans" style="font-size: 17px; font-weight: 600;">21 segundos en un bucle</div>
+      <div class="sans" style="font-size: 14px; line-height: 1.6; color: #a09a90;">
+        Llamó seis veces a la misma herramienta. Aislé el SDK y el streaming: limpios.
+        Era mi prompt, que daba una lista de compras. <span style="color: #6fb3a8;">21 s → 4.3 s</span>
+      </div>
+    </div>
+
+    <div class="caso">
+      <div class="mono" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #6fb3a8;">Infraestructura</div>
+      <div class="sans" style="font-size: 17px; font-weight: 600;">/healthz es una ruta reservada</div>
+      <div class="sans" style="font-size: 14px; line-height: 1.6; color: #a09a90;">
+        Google la intercepta antes del contenedor. El síntoma era engañoso: 404 en la sonda
+        mientras el resto de la app respondía perfecto.
+      </div>
+    </div>
+
+    <div class="caso">
+      <div class="mono" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #6fb3a8;">Infraestructura</div>
+      <div class="sans" style="font-size: 17px; font-weight: 600;">CRLF que bash no perdona</div>
+      <div class="sans" style="font-size: 14px; line-height: 1.6; color: #a09a90;">
+        Editar en Windows rompió la continuación de línea. El error nombraba un comando que no
+        existe en el archivo — y <span class="mono" style="font-size: 13px;">bash -n</span> no lo detecta.
+      </div>
+    </div>
+
+  </div>
+
+  <div style="background: #2b2622; border-left: 2px solid #e8613c; padding: 20px 26px;">
+    <div class="sans" style="font-size: 17px; line-height: 1.6; color: #e8ded4;">
+      El más útil de todos: <span style="font-weight: 600;">se acabaron los créditos a media prueba.</span>
+      El agente falló con dignidad — respondió un mensaje en vez de reventar — pero
+      <span style="color: #e8613c;">nadie se enteró</span>. Es el argumento vivo de por qué existe
+      la telemetría, y la alerta que aún falta.
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

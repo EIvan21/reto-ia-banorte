@@ -1,0 +1,30 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",          "x": 0,    "y": 0,    "w": 1440, "h": 810, "title": "01 · Portada" },
+    { "file": "Arquitectura.dc.html",  "x": 1560, "y": 0,    "w": 1440, "h": 810, "title": "02 · Arquitectura" },
+    { "file": "Stack.dc.html",         "x": 3120, "y": 0,    "w": 1440, "h": 810, "title": "03 · Stack y alternativas" },
+    { "file": "SinVectores.dc.html",   "x": 0,    "y": 990,  "w": 1440, "h": 810, "title": "04 · La decisión medida" },
+    { "file": "Honestidad.dc.html",    "x": 1560, "y": 990,  "w": 1440, "h": 810, "title": "05 · Guardrails y honestidad" },
+    { "file": "Observabilidad.dc.html","x": 3120, "y": 990,  "w": 1440, "h": 810, "title": "06 · Observabilidad" },
+    { "file": "Verificacion.dc.html",  "x": 0,    "y": 1980, "w": 1440, "h": 810, "title": "07 · Verificación" },
+    { "file": "Bugs.dc.html",          "x": 1560, "y": 1980, "w": 1440, "h": 810, "title": "08 · Errores que enseñan" },
+    { "file": "Cierre.dc.html",        "x": 3120, "y": 1980, "w": 1440, "h": 810, "title": "09 · Cierre" }
+  ],
+  "annotations": [
+    {
+      "id": "orden-lectura",
+      "x": -420,
+      "y": 0,
+      "w": 330,
+      "text": "Se lee por filas, de izquierda a derecha.\n\nPara presentar: expande un artboard y usa las flechas.\nPara compartir: Export PDF genera las 9 páginas."
+    },
+    {
+      "id": "nucleo",
+      "x": -420,
+      "y": 990,
+      "w": 330,
+      "text": "Si solo hay tiempo para tres:\n\n04 (la decisión medida)\n05 (que no inventa)\n06 (observabilidad con autoría propia)"
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

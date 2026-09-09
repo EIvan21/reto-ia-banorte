@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #1a1917; }
+    a { color: #e8613c; } a:hover { color: #f0836a; }
+    .serif { font-family: 'Instrument Serif', Georgia, serif; }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+    .sans { font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 810px; background: #1a1917; color: #f0ece5; padding: 64px 96px; box-sizing: border-box; display: flex; flex-direction: column; gap: 34px;">
+
+  <div style="display: flex; align-items: baseline; gap: 20px;">
+    <span class="mono" style="font-size: 13px; color: #e8613c; letter-spacing: 0.14em;">05</span>
+    <h1 class="serif" style="font-size: 54px; margin: 0; letter-spacing: -0.01em;">La observabilidad cierra un círculo</h1>
+  </div>
+
+  <div style="display: flex; gap: 48px; align-items: center;">
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <div style="background: #232120; border: 1px solid #34302d; border-radius: 5px; padding: 18px 22px; text-align: center;">
+        <div class="sans" style="font-size: 15px; font-weight: 600;">El agente</div>
+        <div class="mono" style="font-size: 11px; color: #8f8880; margin-top: 3px;">Cloud Run</div>
+      </div>
+      <svg width="46" height="14" viewBox="0 0 46 14" fill="none" aria-hidden="true">
+        <path d="M0 7h40M34 2l6 5-6 5" stroke="#6d665f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div style="background: #232120; border: 1px solid #34302d; border-radius: 5px; padding: 18px 22px; text-align: center;">
+        <div class="sans" style="font-size: 15px; font-weight: 600;">BigQuery</div>
+        <div class="mono" style="font-size: 11px; color: #8f8880; margin-top: 3px;">un renglón por turno</div>
+      </div>
+      <svg width="46" height="14" viewBox="0 0 46 14" fill="none" aria-hidden="true">
+        <path d="M0 7h40M34 2l6 5-6 5" stroke="#6d665f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div style="background: #2b2622; border: 1px solid #e8613c; border-radius: 5px; padding: 18px 22px; text-align: center;">
+        <div class="sans" style="font-size: 15px; font-weight: 600; color: #e8613c;">Agent Analytics Block</div>
+        <div class="mono" style="font-size: 11px; color: #a09a90; margin-top: 3px;">Looker · autoría propia</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="serif" style="font-size: 36px; line-height: 1.2; max-width: 1080px; letter-spacing: -0.01em;">
+    La pieza de observabilidad de mi agente es una contribución open source mía,
+    <span style="font-style: italic; color: #e8613c;">no una herramienta traída de fuera.</span>
+  </div>
+
+  <div style="display: flex; gap: 32px; flex: 1;">
+
+    <div style="flex: 1.2; background: #232120; border: 1px solid #34302d; border-radius: 5px; padding: 26px 30px; display: flex; flex-direction: column; gap: 16px;">
+      <div class="mono" style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #6d665f;">Lo que registra cada turno</div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px;">
+        <div class="mono" style="font-size: 14px; color: #cfc9c0;">latencia_ms</div>
+        <div class="mono" style="font-size: 14px; color: #cfc9c0;">herramientas_usadas</div>
+        <div class="mono" style="font-size: 14px; color: #cfc9c0;">tokens_entrada</div>
+        <div class="mono" style="font-size: 14px; color: #cfc9c0;">citas</div>
+        <div class="mono" style="font-size: 14px; color: #cfc9c0;">tokens_salida</div>
+        <div class="mono" style="font-size: 14px; color: #6fb3a8;">fundamentado</div>
+        <div class="mono" style="font-size: 14px; color: #cfc9c0;">etiquetas_guardrail</div>
+        <div class="mono" style="font-size: 14px; color: #e8613c;">categoria</div>
+      </div>
+      <div class="sans" style="font-size: 15px; line-height: 1.6; color: #a09a90; margin-top: 4px; text-wrap: pretty;">
+        <span style="color: #6fb3a8;">fundamentado</span> es la métrica que más vigilo: si baja,
+        el agente está respondiendo sobre el CV sin consultarlo.
+      </div>
+    </div>
+
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 18px; border-left: 1px solid #34302d; padding-left: 36px;">
+      <div class="serif" style="font-size: 30px; line-height: 1.2;">Categoría sí, texto nunca</div>
+      <p class="sans" style="font-size: 16px; line-height: 1.65; color: #a09a90; margin: 0; text-wrap: pretty;">
+        Cada turno se clasifica en una de 18 categorías. Quien escribe es un tercero que no
+        dio permiso para almacenar lo que escribió.
+      </p>
+      <p class="sans" style="font-size: 16px; line-height: 1.65; color: #a09a90; margin: 0; text-wrap: pretty;">
+        Y sin gastar una llamada extra: la categoría sale de señales que el turno ya produjo
+        — el guardrail que disparó, o <span style="color: #f0ece5;">las herramientas que el
+        modelo eligió llamar</span>.
+      </p>
+      <div style="background: #2b2622; border-left: 2px solid #6fb3a8; padding: 16px 20px; margin-top: auto;">
+        <div class="sans" style="font-size: 15px; line-height: 1.6; color: #d4cec5;">
+          No es una promesa: hay una prueba que falla si la función de registro acepta un
+          parámetro de texto, o si el esquema tiene columna donde quepa.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

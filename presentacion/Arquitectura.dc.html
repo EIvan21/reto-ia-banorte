@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #1a1917; }
+    a { color: #e8613c; } a:hover { color: #f0836a; }
+    .serif { font-family: 'Instrument Serif', Georgia, serif; }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+    .sans { font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 810px; background: #1a1917; color: #f0ece5; padding: 64px 96px; box-sizing: border-box; display: flex; flex-direction: column; gap: 40px;">
+
+  <div style="display: flex; align-items: baseline; gap: 20px;">
+    <span class="mono" style="font-size: 13px; color: #e8613c; letter-spacing: 0.14em;">01</span>
+    <h1 class="serif" style="font-size: 54px; margin: 0; letter-spacing: -0.01em;">Un turno, de punta a punta</h1>
+  </div>
+
+  <div style="display: flex; gap: 24px; flex: 1; align-items: stretch;">
+
+    <div style="flex: 1.35; display: flex; flex-direction: column; gap: 12px;">
+
+      <div style="display: flex; align-items: center; gap: 16px; background: #232120; border: 1px solid #34302d; border-radius: 4px; padding: 16px 20px;">
+        <span class="mono" style="font-size: 12px; color: #6d665f; width: 22px;">01</span>
+        <div style="flex: 1;">
+          <div class="sans" style="font-size: 16px; font-weight: 600;">La plataforma manda el transcript completo</div>
+          <div class="mono" style="font-size: 12px; color: #8f8880; margin-top: 3px;">POST /v1/responses · texto e imágenes</div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 16px; background: #232120; border: 1px solid #4a2a20; border-radius: 4px; padding: 16px 20px;">
+        <span class="mono" style="font-size: 12px; color: #6d665f; width: 22px;">02</span>
+        <div style="flex: 1;">
+          <div class="sans" style="font-size: 16px; font-weight: 600; color: #e8613c;">Guardrail de entrada</div>
+          <div class="mono" style="font-size: 12px; color: #8f8880; margin-top: 3px;">inyección → corta antes de gastar la llamada</div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 16px; background: #232120; border: 1px solid #4a2a20; border-radius: 4px; padding: 16px 20px;">
+        <span class="mono" style="font-size: 12px; color: #6d665f; width: 22px;">03</span>
+        <div style="flex: 1;">
+          <div class="sans" style="font-size: 16px; font-weight: 600; color: #e8613c;">Políticas de tema</div>
+          <div class="mono" style="font-size: 12px; color: #8f8880; margin-top: 3px;">salario · vida privada · confidencialidad</div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 16px; background: #2b2622; border: 1px solid #5a4032; border-radius: 4px; padding: 20px;">
+        <span class="mono" style="font-size: 12px; color: #6d665f; width: 22px;">04</span>
+        <div style="flex: 1;">
+          <div class="sans" style="font-size: 17px; font-weight: 600;">Loop agéntico con Claude</div>
+          <div class="mono" style="font-size: 12px; color: #a09a90; margin-top: 5px; line-height: 1.65;">
+            7 herramientas sobre cv.json<br>
+            devuelve datos <span style="color: #e8613c;">+ _citas: ["hab-ia", "exp-globallogic"]</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 16px; background: #232120; border: 1px solid #34302d; border-radius: 4px; padding: 16px 20px;">
+        <span class="mono" style="font-size: 12px; color: #6d665f; width: 22px;">05</span>
+        <div style="flex: 1;">
+          <div class="sans" style="font-size: 16px; font-weight: 600;">Streaming SSE + guardrail de salida</div>
+          <div class="mono" style="font-size: 12px; color: #8f8880; margin-top: 3px;">deltas en vivo · PII · fundamentación</div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 16px; background: #232120; border: 1px solid #34302d; border-radius: 4px; padding: 16px 20px;">
+        <span class="mono" style="font-size: 12px; color: #6d665f; width: 22px;">06</span>
+        <div style="flex: 1;">
+          <div class="sans" style="font-size: 16px; font-weight: 600;">Telemetría</div>
+          <div class="mono" style="font-size: 12px; color: #8f8880; margin-top: 3px;">Cloud Logging + BigQuery · categoría, sin texto</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 20px; justify-content: center; border-left: 1px solid #34302d; padding-left: 40px;">
+      <div class="serif" style="font-size: 38px; line-height: 1.15; letter-spacing: -0.01em;">
+        El paso 04 <span style="font-style: italic; color: #e8613c;">nunca inventa</span>
+      </div>
+      <p class="sans" style="font-size: 17px; line-height: 1.65; color: #a09a90; margin: 0; text-wrap: pretty;">
+        El modelo solo puede afirmar lo que las herramientas le devolvieron, y cada
+        resultado trae los identificadores del CV que lo respaldan.
+      </p>
+      <p class="sans" style="font-size: 17px; line-height: 1.65; color: #a09a90; margin: 0; text-wrap: pretty;">
+        Eso convierte «no alucina» de una promesa en una propiedad verificable:
+        se puede auditar de dónde salió cada frase.
+      </p>
+      <div style="background: #232120; border-left: 2px solid #e8613c; padding: 16px 20px; margin-top: 8px;">
+        <div class="mono" style="font-size: 13px; line-height: 1.7; color: #d4cec5;">
+          &gt; ¿Tiene experiencia con Kubernetes?<br>
+          <span style="color: #e8613c;">No, Kubernetes no aparece en el CV.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

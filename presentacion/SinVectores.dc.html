@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #1a1917; }
+    a { color: #e8613c; } a:hover { color: #f0836a; }
+    .serif { font-family: 'Instrument Serif', Georgia, serif; }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+    .sans { font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 810px; background: #1a1917; color: #f0ece5; padding: 64px 96px; box-sizing: border-box; display: flex; flex-direction: column; gap: 34px;">
+
+  <div style="display: flex; align-items: baseline; gap: 20px;">
+    <span class="mono" style="font-size: 13px; color: #e8613c; letter-spacing: 0.14em;">03</span>
+    <h1 class="serif" style="font-size: 54px; margin: 0; letter-spacing: -0.01em;">
+      «¿Por qué no usaste una base vectorial?»
+    </h1>
+  </div>
+
+  <p class="sans" style="font-size: 19px; line-height: 1.6; color: #a09a90; margin: 0; max-width: 900px; text-wrap: pretty;">
+    Es la primera pregunta que hace cualquiera, así que no la respondo con una opinión.
+    Construí dos bancos de preguntas: unas que comparten vocabulario con el CV, y otras
+    <span style="color: #f0ece5;">parafraseadas</span> — como habla quien no lo ha leído.
+    Ese segundo banco es justo el caso que un índice vectorial resuelve y uno léxico no puede.
+  </p>
+
+  <div style="display: flex; gap: 40px; flex: 1; align-items: stretch;">
+
+    <div style="flex: 1.1; display: flex; flex-direction: column; gap: 0;">
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 20px; padding-bottom: 14px; border-bottom: 1px solid #4a4540;">
+        <div class="mono" style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #6d665f;">Métrica</div>
+        <div class="mono" style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #6d665f;">Léxicas</div>
+        <div class="mono" style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #6d665f;">Semánticas</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 20px; padding: 24px 0; border-bottom: 1px solid #2a2724; align-items: baseline;">
+        <div class="sans" style="font-size: 17px;">recall@8</div>
+        <div class="serif" style="font-size: 40px; color: #6fb3a8;">100%</div>
+        <div class="serif" style="font-size: 40px; color: #6fb3a8;">100%</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 20px; padding: 24px 0; border-bottom: 1px solid #2a2724; align-items: baseline;">
+        <div class="sans" style="font-size: 17px;">recall@3</div>
+        <div class="serif" style="font-size: 40px; color: #6fb3a8;">92%</div>
+        <div class="serif" style="font-size: 40px; color: #d9a441;">75%</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 20px; padding: 24px 0; align-items: baseline;">
+        <div class="sans" style="font-size: 17px;">MRR</div>
+        <div class="serif" style="font-size: 40px; color: #6fb3a8;">0.74</div>
+        <div class="serif" style="font-size: 40px; color: #e8613c;">0.61</div>
+      </div>
+
+      <div class="mono" style="font-size: 12px; color: #6d665f; margin-top: 14px; line-height: 1.7;">
+        corpus: 27 entradas · 12,940 tokens reales<br>
+        medidos con la API, no estimados · 1.3% de la ventana
+      </div>
+    </div>
+
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 22px; justify-content: center; border-left: 1px solid #34302d; padding-left: 44px;">
+
+      <div class="serif" style="font-size: 40px; line-height: 1.12; letter-spacing: -0.01em;">
+        Lo léxico no falla:<br>
+        <span style="font-style: italic; color: #e8613c;">rankea peor.</span>
+      </div>
+
+      <p class="sans" style="font-size: 17px; line-height: 1.65; color: #a09a90; margin: 0; text-wrap: pretty;">
+        La brecha está en el orden, no en la cobertura. Y como el modelo recibe ocho
+        candidatos y escoge, ese error <span style="color: #f0ece5;">no llega al usuario</span>:
+        la entrada correcta ya venía en el paquete.
+      </p>
+
+      <div style="background: #232120; border: 1px solid #34302d; border-radius: 4px; padding: 20px 22px;">
+        <div class="mono" style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #e8613c; margin-bottom: 10px;">Cuándo cambiaría</div>
+        <div class="sans" style="font-size: 15px; line-height: 1.6; color: #cfc9c0;">
+          Si bajo k a 3 para ahorrar contexto, o si el corpus crece hasta que 8 candidatos
+          no lo cubran. Correr el script lo responde en segundos.
+        </div>
+      </div>
+
+      <div class="sans" style="font-size: 14px; line-height: 1.6; color: #6d665f; text-wrap: pretty;">
+        Honestidad sobre la medición: con 27 entradas, devolver 8 es entregar un tercio
+        del CV, así que recall@8 mide poco. Por eso el veredicto se apoya en MRR y recall@3.
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

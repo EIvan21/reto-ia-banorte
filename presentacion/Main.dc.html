@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #1a1917; }
+    a { color: #e8613c; } a:hover { color: #f0836a; }
+    .serif { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+    .sans { font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 810px; background: #1a1917; color: #f0ece5; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 80px 96px; box-sizing: border-box;">
+
+  <div style="position: absolute; top: -180px; right: -160px; width: 620px; height: 620px; border-radius: 50%; background: radial-gradient(circle, rgba(232,97,60,0.16) 0%, rgba(232,97,60,0) 68%);"></div>
+  <div style="position: absolute; left: 96px; top: 300px; width: 132px; height: 3px; background: #e8613c;"></div>
+
+  <div class="mono" style="display: flex; gap: 28px; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: #8f8880; position: relative;">
+    <span>Reto IA Banorte</span>
+    <span style="color: #4a4540;">/</span>
+    <span>Septiembre 2026</span>
+  </div>
+
+  <div style="position: relative;">
+    <div class="serif" style="font-size: 108px; line-height: 0.98; letter-spacing: -0.02em; margin: 0 0 34px 0; max-width: 1050px;">
+      Un agente que habla de mi carrera<br>
+      <span style="font-style: italic; color: #e8613c;">y que no inventa nada.</span>
+    </div>
+    <p class="sans" style="font-size: 21px; line-height: 1.6; color: #a09a90; max-width: 720px; margin: 0; text-wrap: pretty;">
+      Agente conversacional de CV sobre el protocolo Open Responses, desplegado en
+      Cloud Run. Cada afirmación cita la entrada del CV que la respalda, y cuando
+      algo no está, lo dice.
+    </p>
+  </div>
+
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; position: relative;">
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <div class="sans" style="font-size: 20px; font-weight: 600; color: #f0ece5;">Edher Iván Díaz Salazar</div>
+      <div class="mono" style="font-size: 14px; color: #8f8880;">Analytics Engineer · Google Cloud · looker-open-source</div>
+    </div>
+    <div style="display: flex; gap: 56px;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div class="serif" style="font-size: 46px; line-height: 1; color: #e8613c;">123</div>
+        <div class="mono" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #8f8880;">pruebas</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div class="serif" style="font-size: 46px; line-height: 1; color: #e8613c;">42</div>
+        <div class="mono" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #8f8880;">casos dorados</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div class="serif" style="font-size: 46px; line-height: 1; color: #e8613c;">2</div>
+        <div class="mono" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #8f8880;">protocolos</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
