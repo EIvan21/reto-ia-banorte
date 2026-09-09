@@ -99,6 +99,39 @@ for s in "$SECRETO" "$SECRETO_AGENTE"; do
     --project "$PROYECTO" --quiet >/dev/null
 done
 
+# Permisos para que Cloud Build construya la imagen.
+#
+# En proyectos creados despues del cambio de 2024, la cuenta de servicio por
+# defecto YA NO recibe estos roles automaticamente, y el despliegue falla con un
+# PERMISSION_DENIED al leer el codigo fuente que el propio gcloud acaba de subir.
+# El mensaje no dice que rol falta, asi que se otorgan explicitamente aqui: es la
+# diferencia entre un script reproducible y uno que solo funciona en la maquina
+# donde ya se configuro a mano.
+echo "==> Otorgando permisos de build a ${CUENTA_SERVICIO}..."
+for rol in \
+  roles/cloudbuild.builds.builder \
+  roles/storage.objectViewer \
+  roles/artifactregistry.writer \
+  roles/logging.logWriter
+do
+  gcloud projects add-iam-policy-binding "$PROYECTO" \
+    --member="serviceAccount:${CUENTA_SERVICIO}" \
+    --role="$rol" --quiet >/dev/null
+done
+
+# Escritura en BigQuery, solo si hay telemetria configurada. Sin estos roles el
+# agente responde bien pero la telemetria falla en silencio en el hilo de fondo:
+# el sink es best-effort a proposito, asi que el fallo se anota en stdout y nadie
+# lo mira. Se otorgan aqui para que ese caso no exista.
+if [[ -n "${BQ_PROJECT:-}" && -n "${BQ_DATASET:-}" ]]; then
+  echo "==> Otorgando escritura en BigQuery a ${CUENTA_SERVICIO}..."
+  for rol in roles/bigquery.dataEditor roles/bigquery.jobUser; do
+    gcloud projects add-iam-policy-binding "$PROYECTO" \
+      --member="serviceAccount:${CUENTA_SERVICIO}" \
+      --role="$rol" --quiet >/dev/null
+  done
+fi
+
 # --- Despliegue -------------------------------------------------------------
 # Primer despliegue sin PUBLIC_BASE_URL: todavia no se conoce la URL. Se corrige
 # en el segundo paso, una vez que Cloud Run la asigna.
@@ -152,7 +185,7 @@ echo "  Servidor MCP (para cualquier otro agente):"
 echo "        ${URL}/mcp"
 echo
 echo "  Verificacion:"
-echo "        curl ${URL}/healthz"
+echo "        curl ${URL}/salud"
 echo "        curl -X POST ${URL}/v1/responses \\"
 echo "          -H 'Authorization: Bearer ${TOKEN}' \\"
 echo "          -H 'Content-Type: application/json' \\"

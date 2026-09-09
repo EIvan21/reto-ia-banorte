@@ -33,10 +33,10 @@ jobs:
         run: |
           docker run -d --name cv-agent-ci -p 8080:8080 -e ANTHROPIC_API_KEY=falsa cv-agent:ci
           for i in $(seq 1 20); do
-            if curl -sf http://localhost:8080/healthz > /dev/null; then break; fi
+            if curl -sf http://localhost:8080/salud > /dev/null; then break; fi
             sleep 1
           done
-          curl -sf http://localhost:8080/healthz | tee /dev/stderr | grep -q '"estado":"ok"'
+          curl -sf http://localhost:8080/salud | tee /dev/stderr | grep -q '"estado":"ok"'
           curl -sf http://localhost:8080/.well-known/agent-card.json | grep -q openresponses.org
 
           # El servidor MCP falla en silencio si el lifespan de la sub-app no se

@@ -1,0 +1,21 @@
+# Que NO se sube a Cloud Build. Esto es explicito a proposito: sin este archivo
+# gcloud usa .gitignore como aproximacion, y apostar el secreto a una heuristica
+# no es aceptable. El .env tiene la API key de Anthropic en claro.
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+.gitattributes
+.github
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+
+# El contenedor no necesita nada de esto.
+evals
+scripts
+*.md

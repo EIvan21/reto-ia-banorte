@@ -3,7 +3,7 @@
 Endpoints:
   POST /v1/responses                  -- el endpoint del protocolo (streaming y no)
   GET  /.well-known/agent-card.json   -- tarjeta A2A, para el boton "Importar" de la plataforma
-  GET  /healthz                       -- sonda de vida para Cloud Run
+  GET  /salud                         -- sonda de vida (NO /healthz: Google la intercepta)
   GET  /                              -- pagina minima con instrucciones de uso
 """
 
@@ -369,9 +369,17 @@ async def tarjeta_agente():
     )
 
 
-@app.get("/healthz")
+@app.get("/salud")
+@app.get("/healthcheck")
 async def salud():
-    """Sonda de vida. Valida que el CV cargue: sin el, el agente no sirve de nada."""
+    """Sonda de vida. Valida que el CV cargue: sin el, el agente no sirve de nada.
+
+    NO se llama /healthz a proposito. La infraestructura de Google intercepta esa
+    ruta antes de que llegue al contenedor -- es la convencion de health check de
+    Kubernetes y su balanceador la reserva -- asi que devolvia un 404 de Google
+    mientras el resto de la app respondia perfecto. El sintoma era enganoso: el
+    servicio se veia caido desde la sonda y sano desde cualquier otra ruta.
+    """
     try:
         cv = load_cv()
         return {

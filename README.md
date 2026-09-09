@@ -339,7 +339,7 @@ Usa **"Importar desde tarjeta de agente"** con la URL raíz del servicio: la pla
 | Endpoint | Para qué |
 |---|---|
 | `POST /mcp` | Servidor MCP con las mismas herramientas, para cualquier otro agente |
-| `GET /healthz` | Sonda de vida. Valida que el CV cargue, no sólo que el proceso viva |
+| `GET /salud` | Sonda de vida. Valida que el CV cargue, no sólo que el proceso viva |
 | `GET /.well-known/agent-card.json` | Tarjeta A2A para el registro automático |
 | `GET /` | Página con instrucciones de uso |
 | `GET /docs` | OpenAPI interactivo |

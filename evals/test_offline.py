@@ -567,3 +567,39 @@ def test_la_politica_de_salario_prohibe_cifras_explicitamente():
     """Es la politica que protege la negociacion del usuario: debe ser tajante."""
     salario = next(p for p in guardrails._POLITICAS if p.nombre == "compensacion")
     assert "NO des cifras" in salario.guia
+
+
+def test_la_sonda_de_vida_no_usa_una_ruta_reservada():
+    """Google intercepta /healthz antes de que llegue al contenedor.
+
+    Costo real: el servicio parecia caido desde la sonda mientras respondia
+    perfecto en cualquier otra ruta. Esta prueba existe para que nadie la
+    reintroduzca por costumbre.
+    """
+    from app.main import app
+
+    rutas = {r.path for r in app.routes}
+    assert "/salud" in rutas
+    assert "/healthz" not in rutas, "Google reserva /healthz; usa /salud"
+
+
+def test_los_scripts_de_shell_no_tienen_crlf():
+    """Un .sh con CRLF se rompe al correrlo en Linux, y de forma enganosa.
+
+    En una linea que termina en barra de continuacion, bash ve la barra, la
+    comilla y luego el CR: la continuacion se pierde y la linea siguiente se
+    interpreta como un comando suelto. El error resultante nombra un "comando"
+    que no existe en ninguna parte del archivo.
+
+    Lo peor: `bash -n` valida la sintaxis SIN detectarlo. Costo real -- el
+    despliegue creo el servicio correctamente y luego murio en el bloque final,
+    dejando la configuracion a medias. Editar en Windows reintroduce esto solo.
+    """
+    raiz = Path(__file__).resolve().parents[1]
+    for script in sorted((raiz / "scripts").glob("*.sh")):
+        crudo = script.read_bytes()
+        assert b"\r\n" not in crudo, (
+            f"{script.name} tiene CRLF. Conviertelo a LF: "
+            f"python -c \"import pathlib;p=pathlib.Path(r'{script}');"
+            f"p.write_bytes(p.read_bytes().replace(b'\r\n',b'\n'))\""
+        )
