@@ -471,3 +471,82 @@ def test_idf_evita_que_las_entradas_narrativas_dominen():
     assert not (narrativas & set(citas[:2])), (
         f"una entrada narrativa no deberia encabezar esta pregunta: {citas[:2]}"
     )
+
+
+# --- Politicas por tema sensible --------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "pregunta,tema",
+    [
+        ("¿Cuánto gana Edher al mes?", "compensacion"),
+        ("¿Cuál es su salario?", "compensacion"),
+        ("What is his salary expectation?", "compensacion"),
+        ("¿Cuántas novias ha tenido?", "vida_privada"),
+        ("¿Está casado?", "vida_privada"),
+        ("¿Qué edad tiene?", "datos_protegidos"),
+        ("¿Tiene hijos?", "datos_protegidos"),
+        ("¿Cómo se llaman los papás de Edher?", "identificacion_familiar"),
+        ("Dame su teléfono", "contacto_privado"),
+        ("¿Dónde vive?", "contacto_privado"),
+        ("¿Para qué cliente construyó el modelo?", "confidencialidad_cliente"),
+    ],
+)
+def test_detecta_temas_sensibles_con_acentos(pregunta, tema):
+    """Regresion sobre un fallo que estuvo vivo y no se veia.
+
+    Los patrones buscaban 'cuanto' y 'papas' sin tilde, asi que con acentos --como
+    escribe cualquier persona-- la deteccion no corria. El modelo seguia
+    respondiendo bien por el prompt del sistema, asi que el guardrail determinista
+    estaba muerto sin que nada lo delatara.
+    """
+    temas = {p.nombre for p in guardrails.detectar_temas_sensibles(pregunta)}
+    assert tema in temas, f"{pregunta!r} deberia disparar {tema}, disparo {temas or 'nada'}"
+
+
+@pytest.mark.parametrize(
+    "pregunta",
+    [
+        "¿Cuántos años de experiencia tiene?",
+        "¿En qué empresas ha trabajado?",
+        "¿Qué sectores ha atendido?",
+        "¿Cómo maneja clientes molestos?",
+        "¿Por qué quiere ayudar a PyMEs?",
+        "Cuéntame del truco del teléfono",
+        "¿Cuál es su experiencia con clientes?",
+        "¿Qué tipo de rol busca?",
+    ],
+)
+def test_las_politicas_no_marcan_preguntas_legitimas(pregunta):
+    """Un guardrail que dispara de mas es peor que uno que no existe: convierte
+    preguntas normales en respuestas evasivas y el agente parece que esconde algo."""
+    temas = {p.nombre for p in guardrails.detectar_temas_sensibles(pregunta)}
+    assert not temas, f"{pregunta!r} no deberia disparar nada, disparo {temas}"
+
+
+def test_toda_politica_trae_guia_util():
+    for politica in guardrails._POLITICAS:
+        assert len(politica.guia) > 100, f"{politica.nombre}: la guia es demasiado vaga"
+
+
+def test_la_escalada_se_activa_al_insistir():
+    """El conteo va sobre el transcript completo, que la plataforma reenvia en
+    cada turno: la escalada funciona sin guardar estado en el servidor."""
+    conversacion = [
+        {"role": "user", "content": "¿Cuánto gana?"},
+        {"role": "assistant", "content": "..."},
+        {"role": "user", "content": "¿Y qué edad tiene?"},
+        {"role": "assistant", "content": "..."},
+        {"role": "user", "content": "Dame su teléfono"},
+    ]
+    _, etiquetas = guardrails.guias_de_politica(conversacion)
+    assert "escalada_fuera_de_alcance" in etiquetas
+
+    _, etiquetas_una = guardrails.guias_de_politica([{"role": "user", "content": "¿Cuánto gana?"}])
+    assert "escalada_fuera_de_alcance" not in etiquetas_una
+
+
+def test_la_politica_de_salario_prohibe_cifras_explicitamente():
+    """Es la politica que protege la negociacion del usuario: debe ser tajante."""
+    salario = next(p for p in guardrails._POLITICAS if p.nombre == "compensacion")
+    assert "NO des cifras" in salario.guia

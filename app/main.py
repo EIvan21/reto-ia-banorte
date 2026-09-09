@@ -196,15 +196,21 @@ async def crear_respuesta(request: Request, authorization: str | None = Header(d
             )
         )
 
+    guias, etiquetas_politica = guardrails.guias_de_politica(mensajes)
+    if etiquetas_politica:
+        registrar("politica_de_tema", etiquetas=etiquetas_politica, id_conversacion=id_conv)
+
     if streaming:
         return StreamingResponse(
-            _stream_agente(id_respuesta, id_mensaje, mensajes, instrucciones, id_conv, inicio),
+            _stream_agente(id_respuesta, id_mensaje, mensajes, instrucciones, id_conv, inicio,
+                           guias, etiquetas_politica),
             media_type="text/event-stream",
             headers=CABECERAS_SSE,
         )
 
     return JSONResponse(
-        content=_responder_completo(id_respuesta, id_mensaje, mensajes, instrucciones, id_conv, inicio)
+        content=_responder_completo(id_respuesta, id_mensaje, mensajes, instrucciones, id_conv,
+                                    inicio, guias, etiquetas_politica)
     )
 
 
@@ -223,13 +229,15 @@ def _stream_agente(
     instrucciones: str,
     id_conv: str,
     inicio: float,
+    guias: list[str] | None = None,
+    etiquetas_politica: list[str] | None = None,
 ) -> Iterator[str]:
     emisor = openresponses.EmisorSSE(id_respuesta, id_mensaje, MODEL)
     yield from emisor.inicio()
 
     resumen = None
     try:
-        for tipo, carga in agent.responder(mensajes, instrucciones):
+        for tipo, carga in agent.responder(mensajes, instrucciones, guias):
             if tipo == "delta":
                 yield emisor.delta(str(carga))
             else:
@@ -239,9 +247,9 @@ def _stream_agente(
         yield from emisor.error("El agente fallo a mitad de la respuesta.")
         return
 
-    etiquetas: list[str] = []
+    etiquetas: list[str] = list(etiquetas_politica or [])
     if resumen is not None:
-        etiquetas = guardrails.verificar_fundamento(resumen.texto, resumen.citas)
+        etiquetas += guardrails.verificar_fundamento(resumen.texto, resumen.citas)
 
     yield from emisor.fin(
         resumen.tokens_entrada if resumen else 0,
@@ -271,15 +279,18 @@ def _responder_completo(
     instrucciones: str,
     id_conv: str,
     inicio: float,
+    guias: list[str] | None = None,
+    etiquetas_politica: list[str] | None = None,
 ) -> dict:
     resumen = None
-    for tipo, carga in agent.responder(mensajes, instrucciones):
+    for tipo, carga in agent.responder(mensajes, instrucciones, guias):
         if tipo == "fin":
             resumen = carga
 
     texto = resumen.texto if resumen else ""
     texto, etiquetas_pii = guardrails.redactar_pii(texto)
-    etiquetas = etiquetas_pii + guardrails.verificar_fundamento(texto, resumen.citas if resumen else [])
+    etiquetas = (list(etiquetas_politica or []) + etiquetas_pii
+                 + guardrails.verificar_fundamento(texto, resumen.citas if resumen else []))
 
     registrar_turno(
         id_respuesta=id_respuesta,

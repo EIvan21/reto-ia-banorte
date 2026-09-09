@@ -11,7 +11,7 @@
     "titular": "Analytics Engineer",
     "especialidad": "Looker, LookML, BigQuery y Google Cloud",
     "ubicacion": "Ciudad de Mexico, Mexico",
-    "anios_experiencia": 4,
+    "anios_experiencia": 5,
     "disponibilidad_remoto": true,
     "idiomas": [
       {
@@ -27,7 +27,7 @@
         "nivel": "Basico"
       }
     ],
-    "resumen": "Analytics Engineer con mas de 4 anios disenando soluciones de Looker y BigQuery sobre Google Cloud. Certificado Google Cloud Associate Cloud Engineer y autor principal de skills de agentes de IA y bloques de Looker publicados en la organizacion looker-open-source de Google. Redujo 30% el tiempo de desarrollo de LookML automatizando la generacion de codigo con agentes LLM, y bajo 30% el sobreinventario de un cliente con un modelo de pronostico. Especializado en modelado semantico con LookML, pipelines de datos y generacion de datos sinteticos."
+    "resumen": "Analytics Engineer con 5 anios disenando soluciones de Looker y BigQuery sobre Google Cloud. Certificado Google Cloud Associate Cloud Engineer y autor principal de skills de agentes de IA y bloques de Looker publicados en la organizacion looker-open-source de Google. Redujo 30% el tiempo de desarrollo de LookML automatizando la generacion de codigo con agentes LLM, y bajo 30% el sobreinventario de un cliente con un modelo de pronostico. Especializado en modelado semantico con LookML, pipelines de datos y generacion de datos sinteticos."
   },
   "contacto": {
     "id": "contacto",
@@ -49,7 +49,7 @@
         "Modelado semantico y dimensional (Kimball)",
         "Diseno de dashboards"
       ],
-      "contexto": "Usadas a diario durante mas de 4 anios en los tres empleos: soporte tecnico especializado de Looker en Infosys, consultoria en GTEC e ingenieria en GlobalLogic."
+      "contexto": "Usadas a diario durante 5 anios en los tres empleos: soporte tecnico especializado de Looker en Infosys, consultoria en GTEC e ingenieria en GlobalLogic."
     },
     {
       "id": "hab-cloud",
@@ -94,7 +94,7 @@
   "experiencia": [
     {
       "id": "exp-globallogic",
-      "puesto": "Senior Software Engineer",
+      "puesto": "Google Cloud Engineer",
       "empresa": "GlobalLogic",
       "inicio": "2024-08",
       "fin": null,
@@ -119,11 +119,7 @@
       "como_llegue": "Se movio buscando crecimiento profesional y personal. Lo que termino de decidirlo fue el equipo: multidisciplinario y distribuido, con colegas en Estados Unidos, Europa y Corea. Y volvia a trabajar directamente con Google, esta vez creando productos nuevos ademas de mantener los existentes.",
       "dia_a_dia": "Construccion de productos nuevos para Google y mantenimiento de los existentes, coordinando a diario con equipos en Estados Unidos, Europa y Corea.",
       "lo_que_mas_le_gusta": "Hay espacio real para experimentar. Los labs son experimentos que el equipo desarrolla para evaluar si pueden lanzarse al cliente, y la mayoria termina en produccion. Esa es la diferencia entre experimentar y entretenerse.",
-      "progresion": "Entro en agosto de 2024 como Cloud Engineer y Looker Engineer, y en abril de 2025 ascendio a Senior Software Engineer. Es el puesto que tiene hoy.",
-      "puestos_anteriores_en_la_empresa": [
-        "Cloud Engineer (agosto 2024)",
-        "Looker Engineer (agosto 2024)"
-      ]
+      "progresion": "Entro en agosto de 2024 como Cloud Engineer y Looker Engineer. En abril de 2025 su titulo interno paso a Senior Software Engineer, que es como aparece en LinkedIn; en su CV se presenta como Google Cloud Engineer, que describe mejor lo que hace en el dia a dia."
     },
     {
       "id": "exp-gtec",
@@ -336,7 +332,7 @@
       "id": "edu-diplomado",
       "grado": "Diplomado en Ciencia de Datos",
       "institucion": "Skills Tech, Mexico",
-      "periodo": "2022 - 2023",
+      "periodo": "Noviembre 2022 - Junio 2023",
       "en_curso": false,
       "detalle": "Proyecto final: pronostico de precios de electricidad para el mercado mayorista de Mexico con Python y SQL, aplicando metodologia Kimball."
     },
@@ -451,11 +447,6 @@
     "uso_de_ia_en_su_proceso": "Usa IA como una fuente mas dentro de su proceso de investigacion, segun el caso, no como sustituto de entender el problema. Es consistente con su trabajo: construye agentes LLM, asi que conoce de primera mano donde ayudan y donde no hay que creerles."
   },
   "_por_confirmar": [
-    "TITULO ACTUAL: tu CV dice 'Google Cloud Engineer' pero LinkedIn dice que desde abril 2025 eres 'Senior Software Engineer'. Puse Senior Software Engineer. Confirma cual es el correcto.",
-    "DIPLOMADO: el CV dice 'Skills Tech, Mexico' y LinkedIn dice 'Skills For Industry'. Cual es?",
-    "DIPLOMADO FECHAS: el CV dice 2022-2023, LinkedIn dice noviembre 2022 - junio 2023. Uso LinkedIn?",
-    "GTEC: el CV dice 'Looker Consultant', LinkedIn dice 'Consultor Business Analyst - Looker'. Puse el de LinkedIn por ser el titulo oficial.",
-    "ANIOS DE EXPERIENCIA: el perfil dice 4. De diciembre 2021 a hoy son casi 5. Lo subo?",
     "Magia: el angulo de ligue del truco se omitio a proposito. Si lo quieres dentro, dilo."
   ],
   "publicaciones": {

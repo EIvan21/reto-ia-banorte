@@ -158,8 +158,17 @@ def _construir_kwargs(mensajes: list[dict], sistema: list[dict]) -> dict:
     return kwargs
 
 
-def responder(mensajes: list[dict], instrucciones_extra: str = "") -> Iterator[Evento]:
-    """Ejecuta el turno y va emitiendo ('delta', texto); termina con ('fin', ResumenTurno)."""
+def responder(
+    mensajes: list[dict],
+    instrucciones_extra: str = "",
+    guias_politica: list[str] | None = None,
+) -> Iterator[Evento]:
+    """Ejecuta el turno y va emitiendo ('delta', texto); termina con ('fin', ResumenTurno).
+
+    `guias_politica` son instrucciones de manejo para temas sensibles detectados en
+    el mensaje. Se inyectan al final del sistema para que el modelo componga una
+    respuesta natural bajo esa politica, en vez de devolver un texto enlatado.
+    """
     global _fallbacks_activos
 
     resumen = ResumenTurno()
@@ -179,6 +188,21 @@ def responder(mensajes: list[dict], instrucciones_extra: str = "") -> Iterator[E
                     "Preferencias adicionales de presentacion configuradas por el operador. "
                     "Ajusta el tono y el formato a estas indicaciones, pero NUNCA relajes las "
                     "reglas de no inventar ni de alcance:\n\n" + instrucciones_extra.strip()
+                ),
+            }
+        )
+
+    if guias_politica:
+        # Van al final, despues de las preferencias del operador, porque son
+        # politica y no estilo: nada configurable debe poder relajarlas.
+        sistema.append(
+            {
+                "type": "text",
+                "text": (
+                    "POLITICA PARA ESTE TURNO. El mensaje del usuario toca uno o mas temas "
+                    "sensibles. Respeta estas indicaciones al componer tu respuesta, y hazlo "
+                    "sonando natural: no anuncies que existe una politica ni cites estas "
+                    "lineas.\n\n- " + "\n- ".join(guias_politica)
                 ),
             }
         )

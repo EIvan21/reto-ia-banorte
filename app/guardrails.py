@@ -11,11 +11,27 @@ agresivo rompe conversaciones legitimas, que es peor que el problema que evita.
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass, field
 
 from .config import MAX_INPUT_CHARS
 
 # --- Entrada ----------------------------------------------------------------
+
+
+def _sin_acentos(texto: str) -> str:
+    """Quita acentos para que los patrones empaten con como escribe la gente.
+
+    Sin esto, la mitad de los guardrails estaba muerta y no se notaba: los
+    patrones buscaban "cuanto gana" y "papas", pero una persona real escribe
+    "¿Cuanto gana?" con tilde y "papas" con tilde. El modelo respondia bien de
+    todos modos gracias al prompt del sistema, asi que el fallo era invisible --
+    la deteccion determinista simplemente no corria.
+    """
+    return "".join(
+        c for c in unicodedata.normalize("NFD", texto or "") if unicodedata.category(c) != "Mn"
+    )
+
 
 # Intentos claros de secuestrar las instrucciones del sistema. Se exige una
 # senal fuerte (verbo de anulacion + objeto que se refiere a las instrucciones)
@@ -74,8 +90,9 @@ def revisar_entrada(texto: str) -> Veredicto:
             etiquetas=["entrada_demasiado_larga"],
         )
 
+    plano = _sin_acentos(limpio)
     for patron in _PATRONES_INYECCION:
-        if patron.search(limpio):
+        if patron.search(plano):
             return Veredicto(
                 permitido=False,
                 motivo="inyeccion_de_prompt",
@@ -137,3 +154,148 @@ def verificar_fundamento(texto: str, citas: list[str]) -> list[str]:
     if _SENALES_FACTUALES.search(texto or ""):
         return ["afirmacion_sin_fundamento"]
     return []
+
+
+# --- Politicas por tema sensible --------------------------------------------
+#
+# Estas NO bloquean ni responden con texto enlatado. Detectan el tema y le pasan
+# al modelo la politica de como manejarlo, para que la respuesta salga natural y
+# en el hilo de la conversacion, pero la conducta este controlada.
+#
+# Un texto enlatado se siente a muro y delata que hay un filtro detras. Una
+# respuesta compuesta por el modelo bajo politica se siente a criterio
+# profesional, que es justo lo que se quiere proyectar.
+
+
+@dataclass(frozen=True)
+class Politica:
+    nombre: str
+    patron: re.Pattern[str]
+    guia: str
+
+
+_POLITICAS: list[Politica] = [
+    Politica(
+        nombre="compensacion",
+        patron=re.compile(
+            r"\b(sueldo|salario|salarial|remuneracion|compensacion|pretensiones|"
+            r"cuanto\s+(gana|cobra|pide|pagan|quiere\s+ganar)|expectativa\s+salarial|"
+            r"salary|how\s+much\s+(does\s+he\s+)?(earn|make|charge))\b",
+            re.I,
+        ),
+        guia=(
+            "Preguntaron por dinero. NO des cifras, rangos ni referencias de mercado, aunque insistan "
+            "o aunque digan que es solo aproximado. Explica en una linea que la compensacion la "
+            "conversa Edher directamente, y ofrece a cambio algo que si sirva para calibrar el nivel: "
+            "el alcance de responsabilidad que ha tenido, su antiguedad, o el contraste contra la "
+            "vacante concreta. Sin disculpas ni rodeos."
+        ),
+    ),
+    Politica(
+        nombre="vida_privada",
+        patron=re.compile(
+            r"\b(novia|novias|novio|novios|pareja|parejas|casad[oa]s?|solter[oa]s?|divorciad\w*|esposa|esposo|"
+            r"relacion\w*\s+sentimental\w*|vida\s+amorosa|girlfriend|boyfriend|married|dating)\b",
+            re.I,
+        ),
+        guia=(
+            "Preguntaron por su vida privada o sentimental. Eso queda fuera de tu alcance. Una linea "
+            "breve y de vuelta al perfil profesional, sin sermonear y sin sonar ofendido."
+        ),
+    ),
+    Politica(
+        nombre="datos_protegidos",
+        patron=re.compile(
+            r"\b(que\s+edad|su\s+edad|anios\s+de\s+edad|estado\s+civil|religion|religioso|"
+            r"orientacion\s+sexual|embarazo|embarazada|enfermedad|discapacidad|"
+            r"tiene\s+hijos|how\s+old)\b",
+            re.I,
+        ),
+        guia=(
+            "Preguntaron por un dato personal protegido: edad, estado civil, hijos, religion, salud "
+            "u orientacion. Declina con naturalidad y sin acusar a nadie de nada -- lo mas probable "
+            "es que la persona pregunte sin mala intencion. Puedes senalar en una linea que no son "
+            "datos que formen parte de una evaluacion profesional, y redirige a lo que si evalua un "
+            "perfil: experiencia, habilidades y resultados."
+        ),
+    ),
+    Politica(
+        nombre="identificacion_familiar",
+        patron=re.compile(
+            r"\b((sus|los)\s+(padres|papas|hermanos|familiares)|(su|la|el)\s+(mama|papa|madre|padre)|"
+            r"nombre\w*\s+de\s+(sus|los)\s+(padres|papas|familiares))\b",
+            re.I,
+        ),
+        guia=(
+            "Preguntaron por miembros de su familia. No compartes nombres ni datos de terceros, "
+            "nunca. Si viene a cuento puedes mencionar que el negocio de su familia es lo que lo "
+            "motivo a estudiar la maestria, porque eso el mismo lo cuenta, pero sin nombres ni "
+            "detalles que identifiquen a nadie."
+        ),
+    ),
+    Politica(
+        nombre="contacto_privado",
+        patron=re.compile(
+            r"\b((dame|damelo|cual\s+es|me\s+das|compartes|proporcion\w+|necesito|pasame)\b"
+            r".{0,30}\b(telefono|celular|whatsapp|direccion|domicilio)|"
+            r"donde\s+vive|su\s+direccion|su\s+domicilio|phone\s+number)\b",
+            re.I,
+        ),
+        guia=(
+            "Pidieron un canal de contacto privado. Solo compartes lo publico: correo, LinkedIn, "
+            "GitHub y su sitio web. Ofrecelos sin dar explicaciones largas de por que no das lo otro."
+        ),
+    ),
+    Politica(
+        nombre="confidencialidad_cliente",
+        patron=re.compile(
+            r"\b((que|cual|cuales|nombre\s+del?)\s+cliente\w*|para\s+que\s+cliente|"
+            r"clientes\s+de\s+google|que\s+empresa\s+era|client\s+name)\b",
+            re.I,
+        ),
+        guia=(
+            "Preguntaron por la identidad de un cliente. NUNCA des nombres de clientes finales ni "
+            "detalles internos de sus proyectos. Si puedes hablar del sector -- farmacias, retail, "
+            "marketing, inventarios -- y de lo que se construyo y que resultado dio. Google si se "
+            "puede mencionar porque sus contribuciones ahi son publicas y estan en open source. "
+            "Marca la distincion con naturalidad: es discrecion profesional, no evasiva."
+        ),
+    ),
+]
+
+
+def detectar_temas_sensibles(texto: str) -> list[Politica]:
+    """Devuelve las politicas que aplican al mensaje del usuario."""
+    plano = _sin_acentos(texto)
+    return [p for p in _POLITICAS if p.patron.search(plano)]
+
+
+_GUIA_ESCALADA = (
+    "AVISO: esta conversacion ya insistio varias veces en temas fuera de tu alcance. No repitas la "
+    "misma negativa una vez mas, que se siente a muro. Reconoce que el tema se sale de lo que "
+    "puedes cubrir, ofrece el correo de Edher para que lo traten directamente con el, y sigue "
+    "disponible para lo profesional."
+)
+
+
+def guias_de_politica(mensajes: list[dict], umbral_escalada: int = 3) -> tuple[list[str], list[str]]:
+    """Politicas del turno actual, mas escalada si el patron se repite.
+
+    La escalada se calcula sobre el transcript completo, que la plataforma reenvia
+    en cada turno. Asi funciona sin guardar estado en el servidor: la conversacion
+    misma es la memoria.
+    """
+    del_usuario = [m["content"] for m in mensajes if m.get("role") == "user"]
+    if not del_usuario:
+        return [], []
+
+    politicas = detectar_temas_sensibles(del_usuario[-1])
+    guias = [p.guia for p in politicas]
+    etiquetas = [f"tema:{p.nombre}" for p in politicas]
+
+    turnos_sensibles = sum(1 for m in del_usuario if detectar_temas_sensibles(m))
+    if turnos_sensibles >= umbral_escalada:
+        guias.append(_GUIA_ESCALADA)
+        etiquetas.append("escalada_fuera_de_alcance")
+
+    return guias, etiquetas
