@@ -21,6 +21,10 @@
       {
         "idioma": "Ingles",
         "nivel": "Profesional"
+      },
+      {
+        "idioma": "Japones",
+        "nivel": "Basico"
       }
     ],
     "resumen": "Analytics Engineer con mas de 4 anios disenando soluciones de Looker y BigQuery sobre Google Cloud. Certificado Google Cloud Associate Cloud Engineer y autor principal de skills de agentes de IA y bloques de Looker publicados en la organizacion looker-open-source de Google. Redujo 30% el tiempo de desarrollo de LookML automatizando la generacion de codigo con agentes LLM, y bajo 30% el sobreinventario de un cliente con un modelo de pronostico. Especializado en modelado semantico con LookML, pipelines de datos y generacion de datos sinteticos."
@@ -31,7 +35,8 @@
     "linkedin": "https://linkedin.com/in/edherdiaz",
     "github": "https://github.com/heyedher",
     "sitio_web": "https://edherivan.com",
-    "_nota_privacidad": "El telefono NO se incluye aqui de forma intencional: este repositorio es publico. El agente solo comparte email, LinkedIn, GitHub y sitio web."
+    "_nota_privacidad": "El telefono NO se incluye aqui de forma intencional: este repositorio es publico. El agente solo comparte email, LinkedIn, GitHub y sitio web.",
+    "tiktok": "https://tiktok.com/@eivan7678"
   },
   "habilidades": [
     {
@@ -89,7 +94,7 @@
   "experiencia": [
     {
       "id": "exp-globallogic",
-      "puesto": "Google Cloud Engineer",
+      "puesto": "Senior Software Engineer",
       "empresa": "GlobalLogic",
       "inicio": "2024-08",
       "fin": null,
@@ -113,11 +118,16 @@
       ],
       "como_llegue": "Se movio buscando crecimiento profesional y personal. Lo que termino de decidirlo fue el equipo: multidisciplinario y distribuido, con colegas en Estados Unidos, Europa y Corea. Y volvia a trabajar directamente con Google, esta vez creando productos nuevos ademas de mantener los existentes.",
       "dia_a_dia": "Construccion de productos nuevos para Google y mantenimiento de los existentes, coordinando a diario con equipos en Estados Unidos, Europa y Corea.",
-      "lo_que_mas_le_gusta": "Hay espacio real para experimentar. Los labs son experimentos que el equipo desarrolla para evaluar si pueden lanzarse al cliente, y la mayoria termina en produccion. Esa es la diferencia entre experimentar y entretenerse."
+      "lo_que_mas_le_gusta": "Hay espacio real para experimentar. Los labs son experimentos que el equipo desarrolla para evaluar si pueden lanzarse al cliente, y la mayoria termina en produccion. Esa es la diferencia entre experimentar y entretenerse.",
+      "progresion": "Entro en agosto de 2024 como Cloud Engineer y Looker Engineer, y en abril de 2025 ascendio a Senior Software Engineer. Es el puesto que tiene hoy.",
+      "puestos_anteriores_en_la_empresa": [
+        "Cloud Engineer (agosto 2024)",
+        "Looker Engineer (agosto 2024)"
+      ]
     },
     {
       "id": "exp-gtec",
-      "puesto": "Looker Consultant",
+      "puesto": "Consultor Business Analyst - Looker",
       "empresa": "GTEC",
       "inicio": "2023-12",
       "fin": "2024-08",
@@ -167,10 +177,16 @@
       ],
       "como_llegue": "Infosys lo contacto para su programa de formacion: la consultora contrata recien egresados, sepan programar o no, los entrena y los va colocando en proyectos. Edher pidio explicitamente que lo asignaran a la cuenta de Google. La manager acepto, y ahi arranco su carrera en datos.",
       "dia_a_dia": "Soporte tecnico a clientes de Google que usaban Looker. Los clientes levantaban bugs, reportes y problemas de la herramienta; varios llegaban con miedo real de perder sus datos o su codigo. La atencion era por ticket via correo, por chat en vivo, y por videollamada cuando la gravedad del caso lo ameritaba.",
-      "progresion": "Un ano como agente de soporte. Despues ascendio a SME (Subject Matter Expert) de Looker: quedo a cargo de un grupo de agentes, monitoreando su desempeno y organizando que quienes tenian mejores resultados compartieran sus tacticas con el resto. La idea era que el equipo subiera en conjunto, no que destacaran individuos.",
+      "progresion": "Cuatro etapas en dos anos. Entro en diciembre de 2021 como Software Engineering Trainee en Monterrey, paso a Technical Support Resource de Looker en junio de 2022, luego a Technical Support Specialist, y en septiembre de 2023 llego a Looker SME (Subject Matter Expert). Como SME quedo a cargo de un grupo de agentes, monitoreando su desempeno y organizando que quienes tenian mejores resultados compartieran sus tacticas con el resto. La idea era que el equipo subiera en conjunto, no que destacaran individuos.",
       "casos_complejos": "Como SME de Looker atendia los casos que nadie mas sacaba: integraciones con la API de Looker, el SDK, llamadas a APIs externas, y problemas donde se cruzaban los datos con el modelo semantico.",
       "aprendizajes": "Tratar con clientes molestos sin perder el profesionalismo, y la disciplina de dar la respuesta correcta en lugar de la respuesta rapida. Mas de 400 casos resueltos dejan una intuicion de producto que no se consigue construyendo: sabes por donde se rompe una herramienta porque la viste romperse de todas las formas posibles.",
-      "por_que_sali": "Queria construir, no solo atender tickets. En soporte resuelves lo que otros disenaron; el siguiente paso natural era desarrollar proyectos propios de principio a fin."
+      "por_que_sali": "Queria construir, no solo atender tickets. En soporte resuelves lo que otros disenaron; el siguiente paso natural era desarrollar proyectos propios de principio a fin.",
+      "puestos_en_la_empresa": [
+        "Software Engineering Trainee (diciembre 2021 - junio 2022, Monterrey)",
+        "Technical Support Resource, Looker (junio 2022 - marzo 2023)",
+        "Technical Support Specialist (hasta diciembre 2023)",
+        "Looker SME (septiembre 2023 - diciembre 2023)"
+      ]
     }
   ],
   "proyectos": [
@@ -298,7 +314,7 @@
         "Integracion por API",
         "Python"
       ],
-      "estado": "Proyecto personal en curso. Los videos se publican en su canal de TikTok, que por ahora tiene poco alcance: es un espacio de experimentacion con modelos generativos, no un proyecto de audiencia."
+      "estado": "Proyecto personal en curso. Los videos se publican en su canal de TikTok, @eivan7678, que por ahora tiene poco alcance: es un espacio de experimentacion con modelos generativos, no un proyecto de audiencia."
     }
   ],
   "open_source": {
@@ -313,7 +329,7 @@
       "id": "edu-mna",
       "grado": "Maestria en Inteligencia Artificial Aplicada",
       "institucion": "Tecnologico de Monterrey",
-      "periodo": "En curso",
+      "periodo": "Abril 2026 - Abril 2028 (en curso)",
       "en_curso": true
     },
     {
@@ -435,7 +451,33 @@
     "uso_de_ia_en_su_proceso": "Usa IA como una fuente mas dentro de su proceso de investigacion, segun el caso, no como sustituto de entender el problema. Es consistente con su trabajo: construye agentes LLM, asi que conoce de primera mano donde ayudan y donde no hay que creerles."
   },
   "_por_confirmar": [
-    "Video: FALTA el handle exacto de TikTok. El usuario acepto incluirlo pero no lo ha dado.",
+    "TITULO ACTUAL: tu CV dice 'Google Cloud Engineer' pero LinkedIn dice que desde abril 2025 eres 'Senior Software Engineer'. Puse Senior Software Engineer. Confirma cual es el correcto.",
+    "DIPLOMADO: el CV dice 'Skills Tech, Mexico' y LinkedIn dice 'Skills For Industry'. Cual es?",
+    "DIPLOMADO FECHAS: el CV dice 2022-2023, LinkedIn dice noviembre 2022 - junio 2023. Uso LinkedIn?",
+    "GTEC: el CV dice 'Looker Consultant', LinkedIn dice 'Consultor Business Analyst - Looker'. Puse el de LinkedIn por ser el titulo oficial.",
+    "ANIOS DE EXPERIENCIA: el perfil dice 4. De diciembre 2021 a hoy son casi 5. Lo subo?",
     "Magia: el angulo de ligue del truco se omitio a proposito. Si lo quieres dentro, dilo."
-  ]
+  ],
+  "publicaciones": {
+    "id": "publicaciones",
+    "titulo": "Estudio del comportamiento de un compresor centrifugo",
+    "descripcion": "Articulo de investigacion sobre el diseno de un banco de pruebas para compresores centrifugos mediante simulacion CFD (dinamica de fluidos computacional). Es de su etapa de Ingenieria en Energia y muestra que su formacion en simulacion y analisis numerico es anterior a su carrera en datos."
+  },
+  "formacion_complementaria": {
+    "id": "formacion-complementaria",
+    "nota": "Cursos y certificaciones fuera de los titulos formales. Muestran el habito autodidacta que atraviesa toda su trayectoria.",
+    "cursos": [
+      "Curso de Analisis de Negocios para Ciencia de Datos",
+      "Enterprise Data Science in Practice",
+      "Curso Profesional de Python",
+      "Data Analysis With Python",
+      "Sistemas Fotovoltaicos Interconectados a la Red Electrica"
+    ],
+    "plataformas": "Varias de estas vienen de Platzi, en temas de pensamiento computacional, analisis de negocios e inteligencia de negocios. Ademas aprendio bases de datos, MySQL y Python por su cuenta con videos, articulos, cursos en linea y libros.",
+    "top_skills_linkedin": [
+      "Jupyter",
+      "API Development",
+      "Matplotlib"
+    ]
+  }
 }

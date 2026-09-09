@@ -93,6 +93,10 @@ _GRUPOS_SINONIMOS: list[set[str]] = [
     {"pyme", "pymes", "negocio", "negocios", "emprendimiento", "familia", "familiar",
      "pequenas empresas", "pequena empresa"},
     {"divulgacion", "ensenar", "explicar", "compartir", "contenido", "creador"},
+    {"publicacion", "publicaciones", "articulo", "paper", "investigacion", "cfd",
+     "simulacion", "compresor", "publicado"},
+    {"idioma", "idiomas", "ingles", "japones", "espanol", "language", "languages"},
+    {"curso", "cursos", "diplomado", "platzi", "autodidacta", "formacion"},
 ]
 
 
@@ -385,6 +389,8 @@ _SECCIONES: dict[str, str] = {
     "intereses": "intereses",
     "trayectoria": "trayectoria",
     "forma_de_trabajar": "forma_de_trabajar",
+    "publicaciones": "publicaciones",
+    "formacion_complementaria": "formacion_complementaria",
 }
 
 
@@ -597,7 +603,7 @@ TOOL_DEFS: list[dict] = [
                 "seccion": {
                     "type": "string",
                     "description": "Seccion a la que acotar la busqueda. Cadena vacia para buscar en todo el CV.",
-                    "enum": ["", "perfil", "experiencia", "proyectos", "habilidades", "educacion", "certificaciones", "open_source", "preferencias_rol", "intereses", "trayectoria", "forma_de_trabajar"],
+                    "enum": ["", "perfil", "experiencia", "proyectos", "habilidades", "educacion", "certificaciones", "open_source", "preferencias_rol", "intereses", "trayectoria", "forma_de_trabajar", "publicaciones", "formacion_complementaria"],
                 },
             },
             "required": ["consulta", "seccion"],
