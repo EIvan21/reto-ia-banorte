@@ -26,8 +26,21 @@ from typing import Any
 
 from .config import BQ_DATASET, BQ_PROJECT, BQ_TABLE, TELEMETRY_ENABLED
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(message)s")
+# Se configura SOLO nuestro logger, no el raiz. Con basicConfig el logger raiz
+# queda en INFO y los clientes HTTP empiezan a escupir una linea por peticion
+# ("HTTP Request: POST ... 200 OK"), que ensucia la salida y, en Cloud Run,
+# inunda Cloud Logging con ruido que ademas revela el trafico saliente.
 _log = logging.getLogger("cv-agent")
+if not _log.handlers:
+    _manejador = logging.StreamHandler(sys.stdout)
+    _manejador.setFormatter(logging.Formatter("%(message)s"))
+    _log.addHandler(_manejador)
+    _log.setLevel(logging.INFO)
+    _log.propagate = False
+
+# Las librerias de red solo hablan cuando algo va mal.
+for _ruidoso in ("httpx", "httpcore", "anthropic", "urllib3", "google"):
+    logging.getLogger(_ruidoso).setLevel(logging.WARNING)
 
 _ejecutor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="telemetria")
 _cliente_bq: Any = None
