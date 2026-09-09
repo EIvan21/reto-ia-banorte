@@ -21,13 +21,55 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import pathlib
+import subprocess
 import sys
 import time
 import urllib.error
 import urllib.request
 
 URL = os.getenv("AGENTE_URL", "https://cv-agent-npnpuwxi2q-uc.a.run.app").rstrip("/")
-TOKEN = os.getenv("AGENTE_TOKEN", "")
+
+
+def _token() -> str:
+    """Busca el token en tres lugares, del mas explicito al mas comodo.
+
+    Existe porque pedirle a alguien que exporte una variable de entorno antes de
+    cada corrida es una forma barata de que la herramienta no se use. Y la
+    sintaxis para hacerlo cambia entre bash y PowerShell, asi que en Windows
+    falla con un error que no dice nada sobre el token.
+    """
+    directo = os.getenv("AGENTE_TOKEN", "").strip()
+    if directo:
+        return directo
+
+    # .env local, que es donde ya vive la configuracion del proyecto.
+    env = pathlib.Path(__file__).resolve().parents[1] / ".env"
+    if env.exists():
+        for linea in env.read_text(encoding="utf-8").splitlines():
+            for llave in ("AGENTE_TOKEN=", "AGENT_API_KEY="):
+                if linea.startswith(llave):
+                    valor = linea[len(llave):].strip().strip("\"'")
+                    if valor:
+                        return valor
+
+    # Secret Manager: la fuente de verdad, sin copiar el secreto a ningun lado.
+    try:
+        proyecto = os.getenv("PROYECTO", "cv-agent-edher")
+        salida = subprocess.run(
+            ["gcloud", "secrets", "versions", "access", "latest",
+             "--secret=agent-api-key", f"--project={proyecto}"],
+            capture_output=True, text=True, timeout=45, shell=(os.name == "nt"),
+        )
+        if salida.returncode == 0 and salida.stdout.strip():
+            return salida.stdout.strip()
+    except Exception:  # noqa: BLE001 - si no hay gcloud, simplemente no hay token
+        pass
+
+    return ""
+
+
+TOKEN = _token()
 
 VERDE, ROJO, GRIS, FIN = "\033[92m", "\033[91m", "\033[90m", "\033[0m"
 
@@ -249,7 +291,11 @@ def main() -> int:
     args = ap.parse_args()
 
     if not TOKEN:
-        print(f"{GRIS}Aviso: sin AGENTE_TOKEN. Si el endpoint pide Bearer, todo dara 401.{FIN}")
+        print(f"{ROJO}No encontre el token.{FIN} Se busca, en orden:")
+        print(f"  {GRIS}1. la variable de entorno AGENTE_TOKEN")
+        print(f"  2. AGENTE_TOKEN o AGENT_API_KEY en el archivo .env")
+        print(f"  3. Secret Manager (necesita gcloud autenticado){FIN}")
+        print("\nSi el endpoint pide Bearer, todo va a dar 401.\n")
     return chat() if args.chat else bateria()
 
 
