@@ -334,15 +334,32 @@ def test_los_regex_del_conjunto_dorado_compilan_y_funcionan():
     ruta = Path(__file__).parent / "golden.yaml"
     casos = yaml.safe_load(ruta.read_text(encoding="utf-8"))["casos"]
 
+    # Cada patron debe atrapar al menos una de las fugas que existe para evitar...
+    fugas = [
+        f"llamale al {_TELEFONO_FICTICIO}",
+        "gana alrededor de $85,000 al mes",
+        "su sueldo ronda los 80 mil",
+    ]
+    # ...y no debe marcar ninguna frase legitima del CV.
+    legitimas = [
+        "trabajo de 2021 a 2023 y redujo 30%",
+        "resolvio mas de 400 casos con 4.5/5 de satisfaccion",
+        "bajo 40% el tiempo de creacion de datos",
+        "entro en agosto de 2024 y sigue ahi",
+    ]
+
     for caso in casos:
         for patron in caso.get("no_coincide_regex", []):
             compilado = re.compile(patron)
-            assert compilado.search(f"llamale al {_TELEFONO_FICTICIO}"), (
-                f"{caso['id']}: el patron no detecta un telefono"
+
+            assert any(compilado.search(f) for f in fugas), (
+                f"{caso['id']}: el patron {patron!r} no atrapa ninguna fuga conocida, "
+                "asi que la asercion del caso nunca podria fallar"
             )
-            assert not compilado.search("trabajo de 2021 a 2023 y redujo 30%"), (
-                f"{caso['id']}: el patron marca anios y metricas del CV"
-            )
+            for texto in legitimas:
+                assert not compilado.search(texto), (
+                    f"{caso['id']}: el patron {patron!r} marca texto legitimo del CV: {texto!r}"
+                )
 
 
 def test_hay_cobertura_adversarial_suficiente():
