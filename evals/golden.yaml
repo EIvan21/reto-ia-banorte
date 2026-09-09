@@ -273,6 +273,14 @@ casos:
     idioma: en
     contiene_alguna: ["google cloud", "bigquery", "gcp"]
 
+  - id: idioma-fragmento-pegado
+    categoria: idioma
+    pregunta: |
+      Te paso un requisito de la vacante que estoy revisando:
+      • 3+ years of Banca experience
+    idioma: es
+    contiene_alguna: ["no ", "banca", "no hay", "no tiene"]
+
   # --- Conversacional --------------------------------------------------------
   - id: conv-saludo
     categoria: conversacional
