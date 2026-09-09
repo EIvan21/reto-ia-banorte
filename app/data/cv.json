@@ -285,14 +285,14 @@
       ],
       "como_funciona": "Le pides algo como 'un video de Bob Esponja bailando quebradita'. El guionista escribe el dialogo, el director de camaras define las tomas, otro agente genera la imagen de referencia (los modelos de video parten de un primer frame), y de ahi sale el clip. Un agente revisor juzga el resultado: si no paso, no se conforma con reintentar el mismo prompt, sino que decide QUE cambiar -- el prompt de la llamada al modelo, algo del guion, o la direccion de camaras -- y vuelve a tirar la toma hasta que pasa su criterio. Al final el editor pega todo.",
       "por_que_es_multiagente": "Los modelos de generacion de video producen clips de seis a diez segundos. Para un video largo hay que encadenar varios, y cada uno tiene que ser coherente con el anterior en historia, encuadre y continuidad. Eso no se resuelve con un prompt mas largo: se resuelve separando responsabilidades y metiendo puntos de control entre ellas.",
-      "integracion_tecnica": "Usa fal.ai, que da acceso por API a muchos modelos de video, imagen y audio bajo una sola suscripcion, en vez de integrar cada proveedor por separado. Los modelos de video que emplea son Veo, Sora y Seedance. El sistema de agentes y de skills corre en local; a los agentes se les pasa la documentacion de la API y ellos arman las llamadas segun lo que toque en cada etapa. Los clips se guardan en local y ahi mismo se editan.",
+      "integracion_tecnica": "Usa fal.ai, que da acceso por API a muchos modelos de video, imagen y audio bajo una sola suscripcion, en vez de integrar cada proveedor por separado. Los modelos de video que emplea son Veo, Sora y Seedance 2.0 Pro. El sistema de agentes y de skills corre en local; a los agentes se les pasa la documentacion de la API y ellos arman las llamadas segun lo que toque en cada etapa. Los clips se guardan en local y ahi mismo se editan.",
       "por_que_importa": "Es el mismo patron que Edher quiere hacer profesionalmente, construido por gusto: roles especializados, revision automatica con criterio, reintentos dirigidos en vez de ciegos, y orquestacion de varios modelos por API. Un agente que juzga la salida de otro y decide que corregir es exactamente el problema dificil de los sistemas agenticos.",
       "tecnologias": [
         "Sistemas multiagente",
         "fal.ai",
         "Veo",
         "Sora",
-        "Seedance",
+        "Seedance 2.0 Pro",
         "Generacion de imagen",
         "Ingenieria de prompts",
         "Integracion por API",
@@ -386,25 +386,27 @@
     "personales": [
       {
         "nombre": "Magia",
-        "detalle": "Hace trucos de magia. Es una aficion de precision y de practica repetida, y de leer bien a quien tiene enfrente."
+        "detalle": "Le gusta desde chico. Empezo haciendo shows pequenos para su familia y hoy la usa en fiestas y reuniones con amigos.",
+        "su_mejor_truco": "Uno que armo en la universidad. Le pedia a alguien su propio celular y le hacia teclear en la calculadora una multiplicacion imposible de anticipar: tres digitos por tres digitos por otros tres digitos. Salia un numero enorme y sin ningun sentido. Cuando esa persona marcaba ese numero, sonaba el telefono de Edher: el resultado era su numero personal.",
+        "por_que_dice_algo_de_el": "Un truco asi no se improvisa: hay que construir hacia atras desde el resultado que quieres y disenar el camino para que parezca libre. Es la misma cabeza que arma un sistema de agentes con roles y puntos de control."
       },
       {
         "nombre": "Guitarra",
-        "detalle": "Toca la guitarra."
+        "detalle": "Toca y hace covers, sobre todo de regional mexicano. Entre sus referencias estan Grupo Frontera, Grupo Firme, Peso Pluma, Christian Nodal, y los clasicos: Jose Jose, Juan Gabriel y Alejandro Fernandez."
       },
       {
         "nombre": "Correr",
-        "detalle": "Sale a correr con regularidad."
+        "detalle": "Corre distancias de diez a quince kilometros. Su ritmo todavia no es el que quiere, pero va mejorando."
       },
       {
         "nombre": "Gimnasio",
-        "detalle": "Entrena en el gimnasio de forma constante."
+        "detalle": "Le entro en serio este ano. Va al menos tres veces por semana, con una rutina que programo apoyandose en IA."
       }
     ],
     "tecnicos": [
       {
         "nombre": "Creacion de contenido visual con IA",
-        "detalle": "Produce contenido corto para TikTok con modelos de generacion de video (Veo, Sora y Seedance) orquestados desde fal.ai. Es su via para mantenerse al dia con los modelos generativos por fuera del trabajo, no solo con los de texto.",
+        "detalle": "Produce contenido corto para TikTok con modelos de generacion de video (Veo, Sora y Seedance 2.0 Pro) orquestados desde fal.ai. Es su via para mantenerse al dia con los modelos generativos por fuera del trabajo, no solo con los de texto.",
         "_revisar": "Edher: confirma la lista de modelos de video. Entendi Veo y Sora, y un tercero que no alcance a distinguir en el audio (¿Seedance? ¿Kling?).",
         "por_que_lo_hace": "Le sirve para mantenerse al dia con los modelos generativos por fuera del trabajo, y conecta con algo que le gustaria hacer mas: explicar y divulgar lo que va saliendo en IA."
       }
@@ -433,7 +435,7 @@
     "uso_de_ia_en_su_proceso": "Usa IA como una fuente mas dentro de su proceso de investigacion, segun el caso, no como sustituto de entender el problema. Es consistente con su trabajo: construye agentes LLM, asi que conoce de primera mano donde ayudan y donde no hay que creerles."
   },
   "_por_confirmar": [
-    "Video: incluir el handle de TikTok en el agente, o solo mencionar que existe el canal? Sigue sin respuesta.",
-    "Video: Seedance lleva numero de version? Del audio entendi algo como 'dos tres'."
+    "Video: FALTA el handle exacto de TikTok. El usuario acepto incluirlo pero no lo ha dado.",
+    "Magia: el angulo de ligue del truco se omitio a proposito. Si lo quieres dentro, dilo."
   ]
 }
