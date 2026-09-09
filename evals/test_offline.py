@@ -796,3 +796,26 @@ def test_no_se_registra_el_texto_de_la_pregunta():
     )
     campos = {c["name"] for c in telemetry.ESQUEMA_BQ}
     assert not (campos & prohibidos), "el esquema de BigQuery no debe guardar texto"
+
+
+def test_las_sugerencias_caben_en_el_formulario():
+    """La plataforma acepta hasta 8, una por linea."""
+    from app.main import SUGERENCIAS
+
+    assert 1 <= len(SUGERENCIAS) <= 8, f"{len(SUGERENCIAS)} sugerencias; el limite es 8"
+    for s in SUGERENCIAS:
+        assert "\n" not in s, "una sugerencia por linea"
+        assert len(s) < 70, f"demasiado larga para el boton: {s!r}"
+
+
+def test_hay_una_sugerencia_que_demuestra_honestidad():
+    """La sugerencia adversarial es intencional: que el evaluador vea al agente
+    reconocer lo que no sabe se defiende solo, mejor que explicarlo."""
+    from app.main import SUGERENCIAS
+    from app.tools import _terminos_ausentes
+
+    adversariales = [s for s in SUGERENCIAS if _terminos_ausentes(s)]
+    assert adversariales, (
+        "ninguna sugerencia menciona algo ausente del CV; se pierde la oportunidad "
+        "de demostrar que el agente no inventa"
+    )

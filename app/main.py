@@ -79,13 +79,23 @@ CABECERAS_SSE = {
     "X-Accel-Buffering": "no",
 }
 
+# Sugerencias que aparecen sobre el cuadro de texto al seleccionar el agente.
+# Son el escaparate: la mayoria de quien evalua hace clic en una en vez de
+# escribir, asi que cada una tiene que mostrar algo distinto.
+#
+# Las dos ultimas son deliberadas y no obvias:
+#   - Kubernetes parece autodestructiva y es lo contrario: demuestra en vivo que
+#     el agente reconoce lo que NO sabe en vez de inflarlo. Es el argumento de
+#     confiabilidad, y se ve mejor demostrado que explicado.
+#   - La de arquitectura lleva al evaluador justo al tema que vino a evaluar.
 SUGERENCIAS = [
     "¿Cual ha sido su experiencia con modelos de lenguaje?",
     "Cuentame del proyecto mas desafiante de su carrera",
     "¿Que tecnologias domina y en que contexto las ha usado?",
-    "¿Tiene experiencia desplegando en la nube?",
     "Te paso una vacante: ¿que tan bien encaja?",
     "¿Que tipo de rol esta buscando?",
+    "¿Tiene experiencia con Kubernetes?",
+    "¿Como esta construido este agente?",
 ]
 
 
