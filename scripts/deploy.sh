@@ -132,6 +132,32 @@ if [[ -n "${BQ_PROJECT:-}" && -n "${BQ_DATASET:-}" ]]; then
   done
 fi
 
+# --- Bucket para reportes descargables --------------------------------------
+# Los reportes se sirven con URL firmada, no publica: pueden contener el analisis
+# de una vacante concreta y no tienen por que ser enumerables ni indexables.
+#
+# Firmar desde Cloud Run con la cuenta por defecto exige que esa cuenta pueda
+# firmar EN SU PROPIO NOMBRE (serviceAccountTokenCreator sobre si misma). Sin ese
+# rol la subida funciona y la firma truena, asi que el fallo aparece al final,
+# cuando el archivo ya existe.
+BUCKET_REPORTES="${BUCKET_REPORTES:-${PROYECTO}-reportes}"
+if ! gcloud storage buckets describe "gs://${BUCKET_REPORTES}" --project "$PROYECTO" &>/dev/null; then
+  echo "==> Creando bucket de reportes gs://${BUCKET_REPORTES}..."
+  gcloud storage buckets create "gs://${BUCKET_REPORTES}" \
+    --project "$PROYECTO" --location "$REGION" \
+    --uniform-bucket-level-access --quiet
+else
+  echo "==> El bucket de reportes ya existe; se reutiliza."
+fi
+
+echo "==> Permisos de escritura y firma para ${CUENTA_SERVICIO}..."
+gcloud storage buckets add-iam-policy-binding "gs://${BUCKET_REPORTES}" \
+  --member="serviceAccount:${CUENTA_SERVICIO}" \
+  --role="roles/storage.objectAdmin" --project "$PROYECTO" --quiet >/dev/null
+gcloud iam service-accounts add-iam-policy-binding "$CUENTA_SERVICIO" \
+  --member="serviceAccount:${CUENTA_SERVICIO}" \
+  --role="roles/iam.serviceAccountTokenCreator" --project "$PROYECTO" --quiet >/dev/null
+
 # --- Despliegue -------------------------------------------------------------
 # Primer despliegue sin PUBLIC_BASE_URL: todavia no se conoce la URL. Se corrige
 # en el segundo paso, una vez que Cloud Run la asigna.
@@ -151,7 +177,7 @@ gcloud run deploy "$SERVICIO" \
   --min-instances "$MIN_INSTANCIAS" \
   --max-instances "$MAX_INSTANCIAS" \
   --set-secrets "ANTHROPIC_API_KEY=${SECRETO}:latest,AGENT_API_KEY=${SECRETO_AGENTE}:latest" \
-  --set-env-vars "MODEL=claude-opus-5,EFFORT=low,BQ_PROJECT=${BQ_PROJECT:-},BQ_DATASET=${BQ_DATASET:-}" \
+  --set-env-vars "MODEL=claude-opus-5,EFFORT=low,BQ_PROJECT=${BQ_PROJECT:-},BQ_DATASET=${BQ_DATASET:-},REPORTES_BUCKET=${BUCKET_REPORTES}" \
   --quiet
 
 URL="$(gcloud run services describe "$SERVICIO" \
@@ -180,6 +206,9 @@ echo "    Estado de la conversacion:"
 echo "        Reproducir transcripcion (sin estado)"
 echo "    Clave de API:"
 echo "        ${TOKEN}"
+echo
+echo "  Reportes descargables:"
+echo "        gs://${BUCKET_REPORTES}"
 echo
 echo "  Servidor MCP (para cualquier otro agente):"
 echo "        ${URL}/mcp"

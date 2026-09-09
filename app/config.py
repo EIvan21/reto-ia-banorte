@@ -37,6 +37,24 @@ MAX_TOOL_TURNS = int(os.getenv("MAX_TOOL_TURNS", "6"))
 ENABLE_FALLBACKS = os.getenv("ENABLE_FALLBACKS", "true").lower() == "true"
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
+# --- Navegacion web ---------------------------------------------------------
+# Herramienta del lado del servidor de Anthropic: solo busca URLs que YA estan en
+# la conversacion, nunca navega por su cuenta. Sirve para el caso real de pegar
+# el enlace de una vacante.
+#
+# max_uses acota costo y latencia: una respuesta que abre diez paginas no es mas
+# util, solo mas lenta. max_content_tokens acota lo que entra al contexto desde
+# una fuente que no controlamos.
+ENABLE_WEB = os.getenv("ENABLE_WEB", "true").lower() == "true"
+WEB_MAX_USOS = int(os.getenv("WEB_MAX_USOS", "3"))
+WEB_MAX_TOKENS_CONTENIDO = int(os.getenv("WEB_MAX_TOKENS_CONTENIDO", "20000"))
+
+# --- Reportes descargables --------------------------------------------------
+# Sin bucket configurado la capacidad se apaga sola y el agente lo dice, en vez
+# de fallar. Es un extra, no el producto.
+REPORTES_BUCKET = os.getenv("REPORTES_BUCKET", "").strip()
+REPORTES_DIAS_VALIDEZ = int(os.getenv("REPORTES_DIAS_VALIDEZ", "7"))
+
 # --- Seguridad del endpoint -------------------------------------------------
 # Bearer opcional. Si AGENT_API_KEY esta definida, /v1/responses la exige.
 AGENT_API_KEY = os.getenv("AGENT_API_KEY", "").strip()

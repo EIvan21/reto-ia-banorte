@@ -586,6 +586,21 @@ def evaluar_vacante(descripcion_vacante: str) -> dict:
     }
 
 
+def generar_reporte(titulo: str, contenido: str) -> dict:
+    """Genera un reporte descargable y devuelve el enlace."""
+    from . import reportes
+
+    cv = load_cv()
+    resultado = reportes.generar(
+        titulo=titulo,
+        contenido=contenido,
+        nombre=cv["perfil"]["nombre"],
+        email=cv["contacto"]["email"],
+    )
+    resultado["_citas"] = ["perfil"]
+    return resultado
+
+
 def obtener_contacto() -> dict:
     """Canales de contacto publicos. El telefono nunca se expone."""
     cv = load_cv()
@@ -704,6 +719,35 @@ TOOL_DEFS: list[dict] = [
         "strict": True,
     },
     {
+        "name": "generar_reporte",
+        "description": (
+            "Genera un reporte descargable con el analisis que acabas de escribir y devuelve "
+            "un enlace. Usala SOLO si la persona pide explicitamente un archivo, un PDF, un "
+            "documento o algo para descargar o compartir. No la uses por iniciativa propia: "
+            "en un chat, la respuesta en pantalla casi siempre es mejor que un enlace."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "titulo": {
+                    "type": "string",
+                    "description": "Titulo del reporte, por ejemplo 'Analisis de encaje: Data Engineer en Banorte'.",
+                },
+                "contenido": {
+                    "type": "string",
+                    "description": (
+                        "El cuerpo completo del reporte en Markdown simple: encabezados con ##, "
+                        "vinetas con -, negritas con **. Escribe aqui el analisis entero, no un "
+                        "resumen: este texto ES el documento."
+                    ),
+                },
+            },
+            "required": ["titulo", "contenido"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
+    {
         "name": "obtener_contacto",
         "description": (
             "Devuelve los canales de contacto publicos (email, LinkedIn, GitHub, sitio web). "
@@ -721,6 +765,7 @@ _DESPACHADOR: dict[str, Callable[..., dict]] = {
     "obtener_habilidades": obtener_habilidades,
     "evaluar_vacante": evaluar_vacante,
     "obtener_contacto": obtener_contacto,
+    "generar_reporte": generar_reporte,
 }
 
 

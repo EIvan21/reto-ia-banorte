@@ -387,13 +387,32 @@ def _herramientas_mcp():
     return asyncio.run(crear_servidor().list_tools())
 
 
+# Herramientas que a proposito NO se exponen por MCP, con su motivo.
+# La lista tiene que ser explicita: sin ella, olvidar cablear una herramienta
+# nueva se ve igual que dejarla fuera deliberadamente.
+_SOLO_OPEN_RESPONSES = {
+    "generar_reporte": (
+        "escribe en Cloud Storage y /mcp esta abierto sin autenticacion, asi que "
+        "exponerla ahi dejaria que cualquiera llene el bucket. Las herramientas de "
+        "solo lectura sobre un CV publico no tienen costo por peticion; esta si."
+    ),
+}
+
+
 def test_el_servidor_mcp_expone_las_mismas_herramientas():
+    """Los dos protocolos deben coincidir, salvo exclusiones documentadas."""
     nombres_mcp = {h.name for h in _herramientas_mcp()}
     nombres_openresponses = {d["name"] for d in tools.TOOL_DEFS}
-    assert nombres_mcp == nombres_openresponses, (
-        "los dos protocolos deben exponer exactamente las mismas herramientas; "
-        f"solo en MCP: {nombres_mcp - nombres_openresponses}, "
-        f"solo en Open Responses: {nombres_openresponses - nombres_mcp}"
+
+    assert not (nombres_mcp - nombres_openresponses), (
+        f"herramientas solo en MCP: {nombres_mcp - nombres_openresponses}"
+    )
+
+    faltantes = nombres_openresponses - nombres_mcp
+    sin_justificar = faltantes - set(_SOLO_OPEN_RESPONSES)
+    assert not sin_justificar, (
+        f"herramientas que no llegaron a MCP y no estan justificadas: {sin_justificar}. "
+        "Cablealas o agregalas a _SOLO_OPEN_RESPONSES con el motivo."
     )
 
 
@@ -673,3 +692,44 @@ def test_la_tarjeta_declara_que_acepta_imagenes():
 
     tarjeta = _json.loads(bytes(asyncio.run(tarjeta_agente()).body).decode())
     assert any("image/" in m for m in tarjeta["defaultInputModes"])
+
+
+def test_las_exclusiones_de_mcp_estan_justificadas_de_verdad():
+    """Una lista de excepciones sin motivo se vuelve un basurero: cualquiera mete
+    ahi lo que se le olvido cablear."""
+    for nombre, motivo in _SOLO_OPEN_RESPONSES.items():
+        assert len(motivo) > 60, f"{nombre}: el motivo es demasiado vago"
+        assert nombre in {d["name"] for d in tools.TOOL_DEFS}, (
+            f"{nombre} ya no existe; sacalo de la lista de exclusiones"
+        )
+
+
+# --- Reportes descargables ---------------------------------------------------
+
+
+def test_el_reporte_escapa_html_del_contenido():
+    """El contenido lo escribe el modelo a partir de texto que pega un tercero.
+    Sin escapado, una vacante con <script> quedaria en un HTML que alguien abre."""
+    from app.reportes import _markdown_minimo
+
+    salida = _markdown_minimo("Requisito: <script>alert('x')</script> y **negritas**")
+    assert "<script>" not in salida
+    assert "&lt;script&gt;" in salida
+    assert "<strong>negritas</strong>" in salida
+
+
+def test_el_reporte_convierte_el_markdown_que_el_modelo_produce():
+    from app.reportes import _markdown_minimo
+
+    salida = _markdown_minimo("## Encaje\n- Cumple Looker\n- No cumple banca\n\nConclusion.")
+    assert "<h2>Encaje</h2>" in salida
+    assert salida.count("<li>") == 2
+    assert "<ul>" in salida and "</ul>" in salida
+    assert "<p>Conclusion.</p>" in salida
+
+
+def test_sin_bucket_la_capacidad_se_apaga_sola():
+    """El agente debe seguir sirviendo sin esta funcion: es un extra, no el producto."""
+    resultado = tools.ejecutar("generar_reporte", {"titulo": "X", "contenido": "## Y"})
+    assert resultado["disponible"] is False
+    assert "mensaje" in resultado and len(resultado["mensaje"]) > 30
