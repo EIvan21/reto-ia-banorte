@@ -79,6 +79,14 @@ _GRUPOS_SINONIMOS: list[set[str]] = [
     {"jefe", "manager", "lider", "supervisor", "ambiente", "cultura", "boss"},
     {"ayuda", "pedir ayuda", "preguntar", "duda", "dudas", "aprender", "aprende",
      "investigar", "investigacion", "estudiar"},
+    {"multiagente", "multi agente", "orquestacion", "flujo", "flujos", "workflow",
+     "pipeline de agentes", "equipo de agentes", "roles"},
+    {"guion", "guionista", "director", "camara", "camaras", "toma", "tomas", "escena",
+     "escenas", "editor", "edicion", "clip", "clips"},
+    {"lento", "lentitud", "rendimiento", "performance", "optimizar", "optimizacion",
+     "auditar", "auditoria", "cuello de botella"},
+    {"repetitivo", "automatizar", "automatizacion", "andamiaje", "scaffolding",
+     "plantilla", "estructura"},
 ]
 
 
@@ -148,15 +156,46 @@ def _texto_de(entrada: Any) -> str:
     return ""
 
 
-def _es_variante(termino: str, palabra: str) -> bool:
-    """Empata variantes morfologicas: modelo/modelos, agente/agentes, dashboard/dashboards.
+# Pesos por tipo de coincidencia, ordenados por confianza. La separacion importa:
+# con un limite fijo de resultados, una coincidencia debil no solo suma poco, sino
+# que puede DESPLAZAR a una fuerte fuera del corte. Aprendido a la mala -- al
+# empatar raices, "open source" empujo al proyecto correcto al septimo lugar.
+_PESO_EXACTO = 4   # la palabra aparece tal cual
+_PESO_PREFIJO = 2  # una extiende a la otra: modelo/modelos
+_PESO_RAIZ = 1     # misma raiz, final distinto: revision/revisor
+_PESO_FRASE = 3    # frase de varias palabras presente literal
+_MAX_RESULTADOS = 8
 
-    Se exige un minimo de 4 caracteres en ambos lados para no empatar prefijos
-    accidentales entre palabras cortas no relacionadas.
+
+def _es_variante(termino: str, palabra: str) -> bool:
+    """Empata variantes morfologicas de la misma raiz.
+
+    Dos casos distintos:
+
+      1. Una palabra extiende a la otra: modelo/modelos, agente/agentes.
+      2. Ambas salen de la misma raiz pero divergen al final: revision/revisor,
+         generacion/generador, optimizar/optimizacion. El caso 1 no las atrapa
+         porque ninguna empieza con la otra, y por eso "revision automatica" no
+         recuperaba la entrada llena de "revisor" y "revisa".
+
+    El umbral de raiz compartida es 5 caracteres con ambas palabras de 6 o mas.
+    Deja pasar algun falso positivo ocasional, y esta bien: un falso positivo solo
+    agrega una entrada floja que el modelo descarta, mientras que un falso
+    negativo pierde la respuesta correcta por completo. Los costos no son
+    simetricos, asi que se prefiere recuperar de mas.
     """
     if len(termino) < 4 or len(palabra) < 4:
         return False
-    return palabra.startswith(termino) or termino.startswith(palabra)
+    if palabra.startswith(termino) or termino.startswith(palabra):
+        return True
+    if len(termino) >= 6 and len(palabra) >= 6:
+        comunes = 0
+        for a, b in zip(termino, palabra):
+            if a != b:
+                break
+            comunes += 1
+        return comunes >= 5
+    return False
 
 
 def _expandir_consulta(consulta: str) -> set[str]:
@@ -204,11 +243,13 @@ def _puntuar(entrada: Any, terminos: set[str]) -> int:
             continue
         if " " in t:
             if t in texto:
-                puntaje += 1
+                puntaje += _PESO_FRASE
         elif t in palabras:
-            puntaje += 2
+            puntaje += _PESO_EXACTO
+        elif any(p.startswith(t) or t.startswith(p) for p in palabras if len(p) >= 4):
+            puntaje += _PESO_PREFIJO
         elif any(_es_variante(t, p) for p in palabras):
-            puntaje += 1
+            puntaje += _PESO_RAIZ
     return puntaje
 
 
@@ -321,7 +362,9 @@ def buscar_cv(consulta: str, seccion: str = "") -> dict:
                 resultados.append({"seccion": sec, "puntaje": puntaje, "contenido": entrada})
 
     resultados.sort(key=lambda r: r["puntaje"], reverse=True)
-    resultados = resultados[:6]
+    # El limite crece con el corpus. Con 6 entradas empezaron a quedarse fuera
+    # coincidencias validas en cuanto el CV paso de 3k a 7k tokens.
+    resultados = resultados[:_MAX_RESULTADOS]
 
     ausentes = _terminos_ausentes(consulta)
 

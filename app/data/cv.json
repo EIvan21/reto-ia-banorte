@@ -186,7 +186,9 @@
         "Agentes LLM",
         "Ingenieria de prompts"
       ],
-      "publico": true
+      "publico": true,
+      "que_problema_resolvia": "Despues de varios proyectos, el trabajo de Looker se vuelve repetitivo. La estructura de archivos es practicamente la misma en todos: modelos, views, explores y dashboards. Y la forma de tratar los datos tambien se repite -- construir views tipo raw y despues refinarlas para ajustar formato y los labels con que aparecen en el dashboard.",
+      "la_idea": "Si el flujo ya esta definido y se repite proyecto tras proyecto, entonces es codificable. Convertirlo en una skill de agente ahorra el arranque completo de cada proyecto nuevo, que es justo la parte que nadie disfruta y donde se cuelan las inconsistencias."
     },
     {
       "id": "proy-looker-performance",
@@ -200,7 +202,9 @@
         "Agentes LLM",
         "Optimizacion de consultas"
       ],
-      "publico": true
+      "publico": true,
+      "que_problema_resolvia": "Auditar un dashboard lento en Looker no es sencillo porque el problema puede estar en cualquiera de varias capas: la UI de Looker, el LookML, o mas atras, el SQL contra la base de datos que se consume. Hay que ir capa por capa descartando, y eso cuesta tiempo.",
+      "la_idea": "La skill audita el proyecto y senala donde esta el cuello de botella en minutos. Se le puede pedir que audite un punto especifico cuando ya sabes que algo va lento. La skill localiza el problema y la persona lo resuelve: acelera el diagnostico, que es la parte lenta, sin quitar el criterio de en medio."
     },
     {
       "id": "proy-agent-analytics",
@@ -208,14 +212,26 @@
       "rol": "Autor principal",
       "organizacion": "looker-open-source (Google)",
       "tipo": "Bloque de Looker",
-      "descripcion": "Bloque de Looker para monitorear y optimizar agentes de IA generativa sobre BigQuery Agent Analytics. Es la pieza de observabilidad que este mismo agente de CV reutiliza: su telemetria se escribe en BigQuery y se monitorea con este bloque.",
+      "descripcion": "Bloque de Looker para monitorear y optimizar agentes de IA generativa sobre BigQuery Agent Analytics. Es la capa de visualizacion y entendimiento que faltaba: los datos de uso de los agentes ya se exportaban a BigQuery, pero nadie podia leerlos.",
       "tecnologias": [
         "Looker",
         "LookML",
         "BigQuery",
         "Observabilidad de agentes GenAI"
       ],
-      "publico": true
+      "publico": true,
+      "de_donde_salio_la_idea": "La idea nacio en el equipo. Los clientes de Google construyen agentes enfocados al flujo de datos, y surgio la pregunta de cuanto los estaban usando realmente dentro de sus ambientes. Nadie tenia esa respuesta. Los datos existian en BigQuery, pero sin capa de visualizacion ni de interpretacion. Ahi entro Edher y construyo el proyecto completo.",
+      "que_mide": [
+        "Cuanto se usan los agentes en total",
+        "Que agentes son los mas utilizados",
+        "Que preguntas les hacen con mas frecuencia",
+        "En que categoria cae cada pregunta",
+        "Que tareas les encargan",
+        "Cuantos tokens consumen"
+      ],
+      "por_que_importa_en_una_organizacion_grande": "Tres usos concretos. Uno, evitar sobrecostos: sin medir el consumo de tokens no hay forma de saber que se esta gastando de mas. Dos, ver en que se esta enfocando la gente, que revela necesidades reales que nadie habia escrito en ningun lado. Y tres, acortar el tiempo de respuesta: cuando una pregunta se repite mucho, deja de tener sentido resolverla desde cero cada vez -- conviene documentarla o resolverla con recuperacion sobre una base de conocimiento, que responde al instante.",
+      "impacto": "Fue un lanzamiento grande, anunciado en varios canales de Google. Es open source: cualquiera puede descargarlo, usarlo y contribuirle.",
+      "conexion_con_este_agente": "Este mismo agente de CV escribe su telemetria en BigQuery con el mismo enfoque, y se monitorea con este bloque. La pieza de observabilidad del agente es una contribucion open source propia, no una herramienta traida de fuera."
     },
     {
       "id": "proy-ga-four",
@@ -249,6 +265,37 @@
         "Docker"
       ],
       "publico": true
+    },
+    {
+      "id": "proy-video-multiagente",
+      "nombre": "Sistema multiagente de generacion de video",
+      "rol": "Autor",
+      "organizacion": "Proyecto personal",
+      "tipo": "Sistema agentico multiagente",
+      "publico": true,
+      "resumen": "Un equipo de agentes especializados que produce videos cortos de principio a fin a partir de una sola instruccion en lenguaje natural. No es un prompt a un modelo de video: es un flujo con roles, revision y reintentos.",
+      "los_agentes": [
+        "Guionista: escribe el dialogo cuando la escena lo lleva",
+        "Revisor de guion: valida el guion antes de que se gaste una sola generacion",
+        "Director de camaras: decide los encuadres y como se ve cada toma",
+        "Revisor de tomas (entrada): revisa los encuadres antes de generar",
+        "Generador de imagen de referencia: los modelos de video parten de un primer frame, y ese frame lo produce otro agente",
+        "Revisor de tomas (salida): revisa el video ya generado y decide si pasa o se repite",
+        "Editor: pega las mini escenas en un video largo"
+      ],
+      "como_funciona": "Le pides algo como 'un video de Bob Esponja bailando quebradita'. El guionista escribe el dialogo, el director de camaras define las tomas, otro agente genera la imagen de referencia (los modelos de video parten de un primer frame), y de ahi sale el clip. Un agente revisor juzga el resultado: si no paso, no se conforma con reintentar el mismo prompt, sino que decide QUE cambiar -- el prompt de la llamada al modelo, algo del guion, o la direccion de camaras -- y vuelve a tirar la toma hasta que pasa su criterio. Al final el editor pega todo.",
+      "por_que_es_multiagente": "Los modelos de generacion de video producen clips de seis a diez segundos. Para un video largo hay que encadenar varios, y cada uno tiene que ser coherente con el anterior en historia, encuadre y continuidad. Eso no se resuelve con un prompt mas largo: se resuelve separando responsabilidades y metiendo puntos de control entre ellas.",
+      "integracion_tecnica": "Usa una plataforma multimedia de IA que da acceso por API a muchos modelos de video, imagen y audio bajo una sola suscripcion. El sistema de agentes y de skills corre en local; a los agentes se les pasa la documentacion de la API y ellos arman las llamadas segun lo que toque en cada etapa. Los clips se guardan en local y ahi mismo se editan.",
+      "por_que_importa": "Es el mismo patron que Edher quiere hacer profesionalmente, construido por gusto: roles especializados, revision automatica con criterio, reintentos dirigidos en vez de ciegos, y orquestacion de varios modelos por API. Un agente que juzga la salida de otro y decide que corregir es exactamente el problema dificil de los sistemas agenticos.",
+      "donde_verlo": "Los videos se publican en su canal de TikTok.",
+      "tecnologias": [
+        "Sistemas multiagente",
+        "Modelos de generacion de video (Veo, Sora)",
+        "Generacion de imagen",
+        "Ingenieria de prompts",
+        "Integracion por API",
+        "Python"
+      ]
     }
   ],
   "open_source": {
@@ -379,6 +426,10 @@
     "uso_de_ia_en_su_proceso": "Usa IA como una fuente mas dentro de su proceso de investigacion, segun el caso, no como sustituto de entender el problema. Es consistente con su trabajo: construye agentes LLM, asi que conoce de primera mano donde ayudan y donde no hay que creerles."
   },
   "_por_confirmar": [
-    "Intereses: falta el tercer modelo de video. Veo y Sora quedaron confirmados."
+    "Video: como se llama la plataforma multimedia de IA que usa por API?",
+    "Video: cual es el tercer modelo de generacion de video? Veo y Sora confirmados.",
+    "Video: incluir el handle de TikTok en el agente, o solo mencionar que existe el canal?",
+    "Video: hay metricas publicables (vistas, seguidores)?",
+    "Agent Analytics: ademas de tokens, se median horas invertidas? No entendi bien esa parte del audio."
   ]
 }
