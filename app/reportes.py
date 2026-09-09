@@ -117,11 +117,28 @@ def _credenciales_de_firma() -> dict:
         import google.auth.transport.requests
 
         credenciales, _ = google.auth.default()
+        peticion = google.auth.transport.requests.Request()
+        credenciales.refresh(peticion)
+
         correo = getattr(credenciales, "service_account_email", None)
+
+        # En Cloud Run este atributo vale literalmente "default", que no sirve
+        # para firmar. El correo real hay que pedirselo al servidor de metadatos.
+        # Este detalle costo dos despliegues: la primera version descartaba el
+        # caso "default" y por tanto se rendia justo cuando debia actuar.
         if not correo or correo == "default":
+            import urllib.request
+
+            solicitud = urllib.request.Request(
+                "http://metadata.google.internal/computeMetadata/v1/"
+                "instance/service-accounts/default/email",
+                headers={"Metadata-Flavor": "Google"},
+            )
+            correo = urllib.request.urlopen(solicitud, timeout=5).read().decode("utf-8").strip()
+
+        if not correo or "@" not in correo:
             return {}
 
-        credenciales.refresh(google.auth.transport.requests.Request())
         return {"service_account_email": correo, "access_token": credenciales.token}
     except Exception:  # noqa: BLE001 - sin esto se intenta la firma normal
         return {}
