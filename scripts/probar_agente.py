@@ -178,15 +178,24 @@ def bateria() -> int:
     fallos += not _ok("termina en [DONE]", crudo.rstrip().endswith("data: [DONE]"))
 
     secuencias = []
+    desajustes = []
     for bloque in crudo.split("\n\n"):
         if bloque.startswith("event:"):
             lineas = bloque.split("\n")
+            nombre = lineas[0].removeprefix("event: ").strip()
             cuerpo_ev = json.loads(lineas[1].removeprefix("data: "))
             secuencias.append(cuerpo_ev.get("sequence_number"))
-            if cuerpo_ev.get("type") != lineas[0].removeprefix("event: ").strip():
-                fallos += 1
+            if cuerpo_ev.get("type") != nombre:
+                desajustes.append(f"event={nombre} pero type={cuerpo_ev.get('type')}")
+
+    # La especificacion exige que el campo `event` coincida con el `type` del
+    # cuerpo. Antes esto sumaba un fallo SIN imprimirlo, asi que el reporte decia
+    # "1 verificacion fallo" sin decir cual: inutil justo cuando hace falta.
+    fallos += not _ok(f"event coincide con type en los {len(secuencias)} eventos",
+                      not desajustes, "; ".join(desajustes[:3]))
     fallos += not _ok("los numeros de secuencia son consecutivos",
-                      secuencias == list(range(len(secuencias))))
+                      secuencias == list(range(len(secuencias))),
+                      "" if secuencias == list(range(len(secuencias))) else str(secuencias[:12]))
 
     # 6. Conversacion de varios turnos, en el modo que usa la plataforma.
     print("\nTRANSCRIPT DE VARIOS TURNOS  (modo 'reproducir transcripcion')")
