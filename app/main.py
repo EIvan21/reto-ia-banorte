@@ -17,7 +17,7 @@ from typing import AsyncIterator, Iterator
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
-from . import agent, guardrails, openresponses
+from . import agent, categorias, guardrails, openresponses
 from .config import (
     AGENT_API_KEY,
     AGENT_NAME,
@@ -103,6 +103,18 @@ def _autorizado(cabecera: str | None) -> bool:
     return hashlib.sha256(cabecera.encode()).digest() == hashlib.sha256(esperado.encode()).digest()
 
 
+def _ultima_pregunta(mensajes: list[dict]) -> str:
+    """Texto del ultimo turno del usuario. Solo se usa para clasificar en memoria:
+    nunca se guarda ni se registra."""
+    for m in reversed(mensajes):
+        if m.get("role") == "user":
+            contenido = m.get("content", "")
+            if isinstance(contenido, str):
+                return contenido
+            return " ".join(b.get("text", "") for b in contenido if b.get("type") == "text")
+    return ""
+
+
 def _id_conversacion(mensajes: list[dict]) -> str:
     """Agrupa los turnos de una misma conversacion sin guardar estado.
 
@@ -110,8 +122,9 @@ def _id_conversacion(mensajes: list[dict]) -> str:
     mensaje del usuario es estable durante toda la conversacion: su hash sirve
     como identificador para la telemetria.
     """
-    primero = next((m["content"] for m in mensajes if m["role"] == "user"), "")
-    return "conv_" + hashlib.sha256(primero.encode("utf-8")).hexdigest()[:16]
+    primero = next((m for m in mensajes if m["role"] == "user"), None)
+    texto = _ultima_pregunta([primero]) if primero else ""
+    return "conv_" + hashlib.sha256(texto.encode("utf-8")).hexdigest()[:16]
 
 
 # --- Endpoint principal -----------------------------------------------------
@@ -178,6 +191,7 @@ async def crear_respuesta(request: Request, authorization: str | None = Header(d
             etiquetas_guardrail=veredicto.etiquetas,
             turnos_herramienta=0,
             streaming=streaming,
+            categoria=categorias.clasificar(ultimo_usuario, [], veredicto.etiquetas),
         )
         if streaming:
             return StreamingResponse(
@@ -269,6 +283,11 @@ def _stream_agente(
         turnos_herramienta=resumen.turnos_herramienta if resumen else 0,
         streaming=True,
         error=resumen.error if resumen else "sin_resumen",
+        categoria=categorias.clasificar(
+            _ultima_pregunta(mensajes),
+            resumen.herramientas_usadas if resumen else [],
+            etiquetas,
+        ),
     )
 
 
@@ -305,6 +324,11 @@ def _responder_completo(
         turnos_herramienta=resumen.turnos_herramienta if resumen else 0,
         streaming=False,
         error=resumen.error if resumen else "sin_resumen",
+        categoria=categorias.clasificar(
+            _ultima_pregunta(mensajes),
+            resumen.herramientas_usadas if resumen else [],
+            etiquetas,
+        ),
     )
 
     return openresponses.construir_respuesta(

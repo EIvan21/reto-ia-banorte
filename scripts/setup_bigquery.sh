@@ -52,6 +52,7 @@ cat > "$ESQUEMA" <<'JSON'
   {"name":"etiquetas_guardrail","type":"STRING","mode":"REPEATED"},
   {"name":"turnos_herramienta","type":"INTEGER"},
   {"name":"streaming","type":"BOOLEAN"},
+  {"name":"categoria","type":"STRING"},
   {"name":"error","type":"STRING"},
   {"name":"exitoso","type":"BOOLEAN"}
 ]
@@ -88,6 +89,14 @@ cat <<SQL
     SUM(tokens_entrada + tokens_salida) AS tokens
   FROM \`$PROYECTO.$DATASET.$TABLA\`
   WHERE marca_tiempo > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 24 HOUR);
+
+  -- De que le preguntan al agente. Es la consulta que responde la pregunta que
+  -- un dueno de agente realmente quiere contestar.
+  SELECT categoria, COUNT(*) AS turnos,
+         ROUND(AVG(latencia_ms)) AS latencia_media_ms,
+         ROUND(COUNTIF(fundamentado) / COUNT(*), 2) AS tasa_fundamentacion
+  FROM \`$PROYECTO.$DATASET.$TABLA\`
+  GROUP BY categoria ORDER BY turnos DESC;
 
   -- Que herramientas se usan mas (revela que le interesa a quien pregunta)
   SELECT herramienta, COUNT(*) AS veces

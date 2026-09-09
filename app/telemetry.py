@@ -84,6 +84,7 @@ def registrar_turno(
     etiquetas_guardrail: list[str],
     turnos_herramienta: int,
     streaming: bool,
+    categoria: str = "sin_clasificar",
     error: str | None = None,
 ) -> None:
     """Registra un turno completo de conversacion."""
@@ -104,6 +105,7 @@ def registrar_turno(
         "etiquetas_guardrail": etiquetas_guardrail,
         "turnos_herramienta": turnos_herramienta,
         "streaming": streaming,
+        "categoria": categoria,
         "error": error,
         "exitoso": error is None,
     }
@@ -142,6 +144,7 @@ ESQUEMA_BQ = [
     {"name": "etiquetas_guardrail", "type": "STRING", "mode": "REPEATED"},
     {"name": "turnos_herramienta", "type": "INTEGER"},
     {"name": "streaming", "type": "BOOLEAN"},
+    {"name": "categoria", "type": "STRING"},
     {"name": "error", "type": "STRING"},
     {"name": "exitoso", "type": "BOOLEAN"},
 ]
