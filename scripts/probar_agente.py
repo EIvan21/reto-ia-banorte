@@ -239,6 +239,60 @@ def bateria() -> int:
 # --- Chat interactivo --------------------------------------------------------
 
 
+def _preguntar_en_streaming(transcript: list[dict]) -> tuple[str, int, int, dict]:
+    """Manda el turno con stream=True y va imprimiendo los deltas segun llegan.
+
+    Devuelve (texto, ms al primer token, ms totales, usage).
+
+    El tiempo al primer token es la metrica que de verdad importa en un chat: es
+    cuando la persona deja de mirar una pantalla vacia. El total puede ser tres
+    veces mas alto y aun asi sentirse rapido.
+    """
+    cuerpo = json.dumps({"input": transcript, "stream": True}).encode("utf-8")
+    cabeceras = {"Content-Type": "application/json", "Accept": "text/event-stream"}
+    if TOKEN:
+        cabeceras["Authorization"] = f"Bearer {TOKEN}"
+
+    req = urllib.request.Request(URL + "/v1/responses", data=cuerpo, headers=cabeceras)
+    inicio = time.perf_counter()
+    primer_token: float | None = None
+    partes: list[str] = []
+    uso: dict = {}
+
+    print()
+    with urllib.request.urlopen(req, timeout=180) as respuesta:
+        for linea_cruda in respuesta:
+            linea = linea_cruda.decode("utf-8").rstrip("\n")
+            if not linea.startswith("data: "):
+                continue
+            carga = linea[6:]
+            if carga == "[DONE]":
+                break
+            try:
+                evento = json.loads(carga)
+            except json.JSONDecodeError:
+                continue
+
+            if evento.get("type") == "response.output_text.delta":
+                if primer_token is None:
+                    primer_token = time.perf_counter()
+                fragmento = evento.get("delta", "")
+                partes.append(fragmento)
+                sys.stdout.write(fragmento)
+                sys.stdout.flush()
+            elif evento.get("type") == "response.completed":
+                uso = evento.get("response", {}).get("usage", {}) or {}
+
+    print()
+    fin = time.perf_counter()
+    return (
+        "".join(partes),
+        int(((primer_token or fin) - inicio) * 1000),
+        int((fin - inicio) * 1000),
+        uso,
+    )
+
+
 def chat() -> int:
     print(f"\nChat con {URL}")
     print(f"{GRIS}Se reenvia el transcript completo en cada turno, igual que la plataforma.")
@@ -263,23 +317,23 @@ def chat() -> int:
         transcript.append({"type": "message", "role": "user",
                            "content": [{"type": "input_text", "text": pregunta}]})
 
-        cod, cuerpo, ms = _pedir("/v1/responses", {"input": transcript})
-        if cod != 200:
-            print(f"{ROJO}  HTTP {cod}{FIN}: {cuerpo[:250]}\n")
+        # Streaming, igual que la plataforma. Cambia por completo la percepcion:
+        # el primer token llega en 2-3 s en vez de esperar la respuesta entera.
+        try:
+            texto, primer_token_ms, total_ms, uso = _preguntar_en_streaming(transcript)
+        except Exception as exc:  # noqa: BLE001
+            print(f"{ROJO}  fallo la peticion{FIN}: {exc}\n")
             transcript.pop()
             continue
 
-        d = json.loads(cuerpo)
-        if d.get("status") != "completed" or not d.get("output"):
-            print(f"{ROJO}  el agente devolvio un error{FIN}: {d.get('error')}\n")
+        if not texto:
+            print(f"{ROJO}  el agente no devolvio texto{FIN}\n")
             transcript.pop()
             continue
 
-        texto = d["output"][0]["content"][0]["text"]
-        u = d.get("usage", {})
-        print(f"\n{texto}\n")
-        print(f"{GRIS}  {ms} ms · {u.get('input_tokens', 0)} tokens entrada · "
-              f"{u.get('output_tokens', 0)} salida · turno {len(transcript) // 2 + 1}{FIN}\n")
+        print(f"\n{GRIS}  primer token {primer_token_ms} ms · total {total_ms} ms · "
+              f"{uso.get('input_tokens', 0)} tokens entrada · {uso.get('output_tokens', 0)} salida · "
+              f"turno {len(transcript) // 2 + 1}{FIN}\n")
 
         transcript.append({"type": "message", "role": "assistant",
                            "content": [{"type": "output_text", "text": texto}]})

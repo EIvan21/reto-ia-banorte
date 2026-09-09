@@ -15,6 +15,7 @@ Secuencia de eventos SSE observada:
 from __future__ import annotations
 
 import json
+import re
 import secrets
 import time
 from typing import Any, Iterator
@@ -37,23 +38,76 @@ def nuevo_id_mensaje() -> str:
 # --- Entrada ----------------------------------------------------------------
 
 
-def _texto_de_contenido(contenido: Any) -> str:
-    """Extrae texto plano de un campo `content` en cualquiera de sus formas."""
+_PREFIJO_DATOS = re.compile(r"^data:(image/(?:png|jpe?g|gif|webp));base64,(.+)$", re.I | re.S)
+
+# Tope por imagen. Una captura de pantalla normal ronda 1-3 MB; mas alla de esto
+# es casi seguro un envio accidental o un intento de agotar memoria.
+_MAX_BYTES_IMAGEN = 5 * 1024 * 1024
+
+
+def _bloque_de_imagen(url: str) -> dict | None:
+    """Convierte una imagen de Open Responses a un bloque de contenido de Claude.
+
+    Se aceptan dos formas: data URI en base64 (lo que manda un cliente que sube
+    un archivo) y URL http(s) (lo que manda uno que entrega por enlace, como la
+    opcion "URL de capacidad" de la plataforma).
+    """
+    if not isinstance(url, str) or not url:
+        return None
+
+    coincidencia = _PREFIJO_DATOS.match(url.strip())
+    if coincidencia:
+        tipo, datos = coincidencia.group(1).lower(), coincidencia.group(2)
+        # El tamano en base64 es ~4/3 del binario; se acota antes de decodificar.
+        if len(datos) * 3 // 4 > _MAX_BYTES_IMAGEN:
+            return None
+        if tipo == "image/jpg":
+            tipo = "image/jpeg"
+        return {"type": "image", "source": {"type": "base64", "media_type": tipo, "data": datos}}
+
+    if url.startswith(("http://", "https://")):
+        return {"type": "image", "source": {"type": "url", "url": url}}
+
+    return None
+
+
+def _bloques_de_contenido(contenido: Any) -> list[dict]:
+    """Normaliza un campo `content` a bloques de contenido de Claude.
+
+    Devuelve texto e imagenes. Todo lo que no se reconozca se ignora en silencio:
+    ser liberal en lo que se acepta evita romper con clientes que manden campos
+    que no conocemos.
+    """
     if isinstance(contenido, str):
-        return contenido
-    if isinstance(contenido, list):
-        partes: list[str] = []
-        for parte in contenido:
-            if isinstance(parte, str):
-                partes.append(parte)
-            elif isinstance(parte, dict):
-                # input_text | output_text | text
-                if isinstance(parte.get("text"), str):
-                    partes.append(parte["text"])
-        return "\n".join(p for p in partes if p)
-    if isinstance(contenido, dict) and isinstance(contenido.get("text"), str):
-        return contenido["text"]
-    return ""
+        return [{"type": "text", "text": contenido}] if contenido else []
+
+    partes = contenido if isinstance(contenido, list) else [contenido]
+    bloques: list[dict] = []
+    for parte in partes:
+        if isinstance(parte, str):
+            if parte:
+                bloques.append({"type": "text", "text": parte})
+            continue
+        if not isinstance(parte, dict):
+            continue
+
+        tipo = parte.get("type", "")
+        if tipo in ("input_image", "image", "output_image"):
+            url = parte.get("image_url") or parte.get("url") or ""
+            if isinstance(url, dict):  # algunos clientes anidan {"url": ...}
+                url = url.get("url", "")
+            bloque = _bloque_de_imagen(url)
+            if bloque:
+                bloques.append(bloque)
+        elif isinstance(parte.get("text"), str) and parte["text"]:
+            bloques.append({"type": "text", "text": parte["text"]})
+
+    return bloques
+
+
+def _texto_de_contenido(contenido: Any) -> str:
+    """Extrae solo el texto de un campo `content`, ignorando imagenes."""
+    return "\n".join(b["text"] for b in _bloques_de_contenido(contenido) if b["type"] == "text")
 
 
 def parsear_entrada(payload: dict) -> list[dict]:
@@ -87,13 +141,30 @@ def parsear_entrada(payload: dict) -> list[dict]:
             if rol not in ("user", "assistant", "system", "developer"):
                 continue
 
-            texto = _texto_de_contenido(item.get("content", ""))
-            if not texto:
+            bloques = _bloques_de_contenido(item.get("content", ""))
+            if not bloques:
                 continue
 
             # system/developer del transcript se tratan como contexto de usuario:
             # la autoridad de operador vive en nuestro propio prompt del sistema.
-            mensajes.append({"role": "assistant" if rol == "assistant" else "user", "content": texto})
+            rol_normalizado = "assistant" if rol == "assistant" else "user"
+
+            # Las imagenes solo tienen sentido en turnos del usuario. En un turno
+            # del asistente se descartan: reenviarlas como si el modelo las
+            # hubiera producido ensucia el historial.
+            if rol_normalizado == "assistant":
+                bloques = [b for b in bloques if b["type"] == "text"]
+                if not bloques:
+                    continue
+
+            # Solo texto -> cadena simple, que es el caso comun y el mas barato.
+            if all(b["type"] == "text" for b in bloques):
+                mensajes.append({
+                    "role": rol_normalizado,
+                    "content": "\n".join(b["text"] for b in bloques),
+                })
+            else:
+                mensajes.append({"role": rol_normalizado, "content": bloques})
 
     return mensajes
 
@@ -103,10 +174,19 @@ def fusionar_roles(mensajes: list[dict]) -> list[dict]:
 
     La API de Claude exige que el primer mensaje sea de rol 'user'.
     """
+    def _como_bloques(contenido: Any) -> list[dict]:
+        return [{"type": "text", "text": contenido}] if isinstance(contenido, str) else list(contenido)
+
     fusionados: list[dict] = []
     for m in mensajes:
         if fusionados and fusionados[-1]["role"] == m["role"]:
-            fusionados[-1]["content"] += "\n\n" + m["content"]
+            previo, actual = fusionados[-1]["content"], m["content"]
+            if isinstance(previo, str) and isinstance(actual, str):
+                fusionados[-1]["content"] = previo + "\n\n" + actual
+            else:
+                # Con imagenes de por medio no se puede concatenar texto plano:
+                # se fusionan como listas de bloques.
+                fusionados[-1]["content"] = _como_bloques(previo) + _como_bloques(actual)
         else:
             fusionados.append(dict(m))
 

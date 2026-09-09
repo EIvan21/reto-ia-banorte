@@ -603,3 +603,73 @@ def test_los_scripts_de_shell_no_tienen_crlf():
             f"python -c \"import pathlib;p=pathlib.Path(r'{script}');"
             f"p.write_bytes(p.read_bytes().replace(b'\r\n',b'\n'))\""
         )
+
+
+# --- Entrada de imagenes -----------------------------------------------------
+
+_PNG_MINIMO = ("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8"
+               "z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+
+
+def test_acepta_imagen_en_base64():
+    """El caso de uso real: alguien pega la captura de una vacante."""
+    payload = {"input": [{"type": "message", "role": "user", "content": [
+        {"type": "input_text", "text": "¿Encaja con esto?"},
+        {"type": "input_image", "image_url": f"data:image/png;base64,{_PNG_MINIMO}"}]}]}
+    contenido = openresponses.parsear_entrada(payload)[0]["content"]
+    assert isinstance(contenido, list)
+    imagenes = [b for b in contenido if b["type"] == "image"]
+    assert len(imagenes) == 1
+    assert imagenes[0]["source"]["media_type"] == "image/png"
+
+
+def test_acepta_imagen_por_url():
+    payload = {"input": [{"type": "message", "role": "user", "content": [
+        {"type": "input_image", "image_url": "https://ejemplo.com/vacante.png"}]}]}
+    contenido = openresponses.parsear_entrada(payload)[0]["content"]
+    assert contenido[0]["source"]["type"] == "url"
+
+
+def test_el_texto_solo_sigue_siendo_cadena_simple():
+    """Envolver todo en bloques encarecería el caso comun sin ganar nada."""
+    contenido = openresponses.parsear_entrada({"input": "hola"})[0]["content"]
+    assert isinstance(contenido, str)
+
+
+@pytest.mark.parametrize("url", ["basura", "", "ftp://x/y.png", "data:image/png;base64,"])
+def test_una_imagen_invalida_no_tumba_el_mensaje(url):
+    """Ser liberal en lo que se acepta: si la imagen no sirve, el texto pasa igual."""
+    payload = {"input": [{"type": "message", "role": "user", "content": [
+        {"type": "input_image", "image_url": url},
+        {"type": "input_text", "text": "hola"}]}]}
+    mensajes = openresponses.parsear_entrada(payload)
+    assert mensajes and "hola" in str(mensajes[0]["content"])
+
+
+def test_rechaza_imagenes_desproporcionadas():
+    """Tope de tamano: mas alla de eso es envio accidental o intento de agotar memoria."""
+    payload = {"input": [{"type": "message", "role": "user", "content": [
+        {"type": "input_image", "image_url": "data:image/png;base64," + "A" * (8 * 1024 * 1024)},
+        {"type": "input_text", "text": "hola"}]}]}
+    contenido = openresponses.parsear_entrada(payload)[0]["content"]
+    assert isinstance(contenido, str) and contenido == "hola"
+
+
+def test_descarta_imagenes_en_turnos_del_asistente():
+    """Reenviarlas como si el modelo las hubiera producido ensucia el historial."""
+    payload = {"input": [
+        {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "hola"}]},
+        {"type": "message", "role": "assistant", "content": [
+            {"type": "output_text", "text": "que tal"},
+            {"type": "input_image", "image_url": f"data:image/png;base64,{_PNG_MINIMO}"}]}]}
+    mensajes = openresponses.parsear_entrada(payload)
+    assert mensajes[1]["content"] == "que tal"
+
+
+def test_la_tarjeta_declara_que_acepta_imagenes():
+    """Si no lo declara, la plataforma no ofrece el boton de adjuntar."""
+    from app.main import tarjeta_agente
+    import asyncio, json as _json
+
+    tarjeta = _json.loads(bytes(asyncio.run(tarjeta_agente()).body).decode())
+    assert any("image/" in m for m in tarjeta["defaultInputModes"])

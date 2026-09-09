@@ -335,7 +335,7 @@ async def tarjeta_agente():
             ),
             "version": AGENT_VERSION,
             "capabilities": {"streaming": True},
-            "defaultInputModes": ["text/plain"],
+            "defaultInputModes": ["text/plain", "image/png", "image/jpeg", "image/webp"],
             "defaultOutputModes": ["text/plain"],
             "promptSuggestions": SUGERENCIAS,
             "skills": [
