@@ -62,6 +62,16 @@ _GRUPOS_SINONIMOS: list[set[str]] = [
      "tiempo libre", "pasatiempo", "pasatiempos", "fuera del trabajo", "personal",
      "magia", "guitarra", "correr", "gimnasio", "musica", "deporte"},
     {"contenido", "tiktok", "video", "videos", "generacion de video", "veo", "sora"},
+    {"historia", "trayectoria", "camino", "recorrido", "empezo", "empezaste", "comenzo",
+     "llego", "llegaste", "origen", "background", "story"},
+    {"porque", "razon", "razones", "motivo", "motivos", "decidio", "decidiste",
+     "cambio", "cambiar", "salio", "saliste", "dejo", "dejaste", "why"},
+    {"orgulloso", "orgullo", "logro", "logros", "satisfaccion", "mejor", "destacado"},
+    {"trabajas", "trabaja", "metodo", "forma de trabajar", "estilo", "colabora",
+     "colaboracion", "equipo", "equipos", "comunidad", "cliente", "clientes"},
+    {"energia", "desaladora", "osmosis", "turbina", "planta", "arduino", "raspberry",
+     "sensores", "hardware"},
+    {"soporte", "tickets", "casos", "sme", "atencion", "clientes molestos"},
 ]
 
 
@@ -98,10 +108,32 @@ def _terminos_de_consulta(consulta: str) -> set[str]:
     return {t for t in _tokenizar(consulta) if len(t) > 2 and t not in _VACIAS}
 
 
+# Llaves que solo dan estructura y no significado. Todas las demas SI se indexan.
+_LLAVES_ESTRUCTURALES = {
+    "id", "actual", "inicio", "fin", "publico", "en_curso", "anio", "nivel",
+    "tipo", "periodo", "periodo_texto", "version", "items",
+}
+
+
 def _texto_de(entrada: Any) -> str:
-    """Aplana cualquier entrada del CV a texto plano buscable."""
+    """Aplana cualquier entrada del CV a texto plano buscable.
+
+    Se indexan tambien los NOMBRES de los campos, no solo sus valores. En este CV
+    los nombres son practicamente la pregunta que cada campo responde
+    ('de_que_esta_orgulloso', 'por_que_sali', 'como_llegue', 'dia_a_dia'), asi que
+    ignorarlos costaba coincidencias obvias: preguntar "¿de que se siente
+    orgulloso?" no recuperaba la entrada que literalmente tiene ese campo, porque
+    la palabra vivia en la llave y no en el texto.
+    """
     if isinstance(entrada, dict):
-        return " ".join(_texto_de(v) for k, v in entrada.items() if not k.startswith("_"))
+        partes: list[str] = []
+        for k, v in entrada.items():
+            if k.startswith("_"):
+                continue
+            if k not in _LLAVES_ESTRUCTURALES:
+                partes.append(k.replace("_", " "))
+            partes.append(_texto_de(v))
+        return " ".join(partes)
     if isinstance(entrada, list):
         return " ".join(_texto_de(v) for v in entrada)
     if isinstance(entrada, (str, int, float)):
@@ -252,6 +284,8 @@ _SECCIONES: dict[str, str] = {
     "open_source": "open_source",
     "preferencias_rol": "preferencias_rol",
     "intereses": "intereses",
+    "trayectoria": "trayectoria",
+    "forma_de_trabajar": "forma_de_trabajar",
 }
 
 
@@ -462,7 +496,7 @@ TOOL_DEFS: list[dict] = [
                 "seccion": {
                     "type": "string",
                     "description": "Seccion a la que acotar la busqueda. Cadena vacia para buscar en todo el CV.",
-                    "enum": ["", "perfil", "experiencia", "proyectos", "habilidades", "educacion", "certificaciones", "open_source", "preferencias_rol", "intereses"],
+                    "enum": ["", "perfil", "experiencia", "proyectos", "habilidades", "educacion", "certificaciones", "open_source", "preferencias_rol", "intereses", "trayectoria", "forma_de_trabajar"],
                 },
             },
             "required": ["consulta", "seccion"],

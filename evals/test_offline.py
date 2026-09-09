@@ -36,7 +36,7 @@ def test_cv_carga_y_tiene_las_secciones_esperadas():
     cv = load_cv()
     for seccion in ("perfil", "contacto", "habilidades", "experiencia", "proyectos",
                     "educacion", "certificaciones", "open_source", "preferencias_rol",
-                    "intereses"):
+                    "intereses", "trayectoria", "forma_de_trabajar"):
         assert seccion in cv, f"falta la seccion {seccion}"
 
 
@@ -82,6 +82,12 @@ def test_el_cv_no_contiene_telefono():
         ("¿Cuáles son sus hobbies?", "intereses"),
         ("¿Toca algún instrumento?", "intereses"),
         ("¿Le interesa trabajar con MCP?", "preferencias-rol"),
+        ("¿Por qué se salió de Infosys?", "exp-infosys"),
+        ("¿Cómo llegó a trabajar con Google?", "exp-globallogic"),
+        ("¿Cuál fue su proyecto final de la carrera?", "edu-licenciatura"),
+        ("¿Cómo aprendió a programar?", "edu-licenciatura"),
+        ("¿Cómo trabaja con equipos distribuidos?", "forma-de-trabajar"),
+        ("¿Cuál es su historia, cómo empezó?", "trayectoria"),
     ],
 )
 def test_la_busqueda_recupera_la_entrada_correcta(pregunta, id_esperado):
@@ -410,3 +416,37 @@ def test_los_hosts_permitidos_incluyen_el_dominio_publico():
     publico = urlparse(PUBLIC_BASE_URL).netloc
     if publico:
         assert publico in hosts
+
+
+def test_los_nombres_de_campo_se_indexan():
+    """Regresion: los nombres de campo son la pregunta que el campo responde.
+
+    'de_que_esta_orgulloso' vive solo en la llave, no en el texto. Indexando solo
+    valores, preguntar "¿de que se siente orgulloso?" no recuperaba la entrada que
+    literalmente tiene ese campo.
+    """
+    resultado = tools.buscar_cv("¿De qué se siente más orgulloso?", "")
+    assert "forma-de-trabajar" in resultado["_citas"]
+
+
+def test_toda_seccion_del_cv_es_alcanzable_por_la_busqueda():
+    """Agregar una seccion al JSON sin registrarla en _SECCIONES la deja invisible:
+    el dato existe, el agente jamas lo encuentra, y nada falla ruidosamente."""
+    from app.tools import _SECCIONES
+
+    cv = load_cv()
+    secciones_datos = {k for k in cv if not k.startswith("_") and k != "contacto"}
+    faltantes = secciones_datos - set(_SECCIONES)
+    assert not faltantes, f"secciones del CV que la busqueda nunca recorre: {faltantes}"
+
+
+def test_el_enum_de_la_herramienta_cubre_todas_las_secciones():
+    """Si el enum se desincroniza, el modelo no puede acotar a esa seccion."""
+    from app.tools import _SECCIONES
+
+    definicion = next(d for d in tools.TOOL_DEFS if d["name"] == "buscar_cv")
+    enum = set(definicion["input_schema"]["properties"]["seccion"]["enum"]) - {""}
+    assert enum == set(_SECCIONES), (
+        f"desincronizado. Falta en el enum: {set(_SECCIONES) - enum}; "
+        f"sobra en el enum: {enum - set(_SECCIONES)}"
+    )

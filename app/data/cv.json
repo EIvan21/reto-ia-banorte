@@ -5,7 +5,6 @@
     "idioma_fuente": "es",
     "nota": "Fuente de verdad del agente. Cada entrada tiene un 'id' estable que las herramientas devuelven como cita verificable. No agregar datos que no esten respaldados por el CV real."
   },
-
   "perfil": {
     "id": "perfil",
     "nombre": "Edher Ivan Diaz Salazar",
@@ -15,12 +14,17 @@
     "anios_experiencia": 4,
     "disponibilidad_remoto": true,
     "idiomas": [
-      { "idioma": "Espanol", "nivel": "Nativo" },
-      { "idioma": "Ingles", "nivel": "Profesional" }
+      {
+        "idioma": "Espanol",
+        "nivel": "Nativo"
+      },
+      {
+        "idioma": "Ingles",
+        "nivel": "Profesional"
+      }
     ],
     "resumen": "Analytics Engineer con mas de 4 anios disenando soluciones de Looker y BigQuery sobre Google Cloud. Certificado Google Cloud Associate Cloud Engineer y autor principal de skills de agentes de IA y bloques de Looker publicados en la organizacion looker-open-source de Google. Redujo 30% el tiempo de desarrollo de LookML automatizando la generacion de codigo con agentes LLM, y bajo 30% el sobreinventario de un cliente con un modelo de pronostico. Especializado en modelado semantico con LookML, pipelines de datos y generacion de datos sinteticos."
   },
-
   "contacto": {
     "id": "contacto",
     "email": "edher.diaz21@gmail.com",
@@ -29,34 +33,59 @@
     "sitio_web": "https://edherivan.com",
     "_nota_privacidad": "El telefono NO se incluye aqui de forma intencional: este repositorio es publico. El agente solo comparte email, LinkedIn, GitHub y sitio web."
   },
-
   "habilidades": [
     {
       "id": "hab-bi",
       "categoria": "BI y Analitica",
-      "items": ["Looker", "LookML", "Looker Studio", "Modelado semantico y dimensional (Kimball)", "Diseno de dashboards"],
+      "items": [
+        "Looker",
+        "LookML",
+        "Looker Studio",
+        "Modelado semantico y dimensional (Kimball)",
+        "Diseno de dashboards"
+      ],
       "contexto": "Usadas a diario durante mas de 4 anios en los tres empleos: soporte tecnico especializado de Looker en Infosys, consultoria en GTEC e ingenieria en GlobalLogic."
     },
     {
       "id": "hab-cloud",
       "categoria": "Datos y Nube",
-      "items": ["BigQuery", "SQL", "Python", "Dataflow", "PySpark", "Vertex AI", "Cloud Storage"],
+      "items": [
+        "BigQuery",
+        "SQL",
+        "Python",
+        "Dataflow",
+        "PySpark",
+        "Vertex AI",
+        "Cloud Storage"
+      ],
       "contexto": "Google Cloud es la plataforma principal de trabajo. Certificado Associate Cloud Engineer. BigQuery y SQL se usan en practicamente todos los proyectos; Dataflow en pipelines de ingesta en GTEC."
     },
     {
       "id": "hab-ds",
       "categoria": "Ciencia de Datos",
-      "items": ["pandas", "NumPy", "scikit-learn", "Matplotlib", "Pronostico (forecasting)", "BigQuery ML"],
+      "items": [
+        "pandas",
+        "NumPy",
+        "scikit-learn",
+        "Matplotlib",
+        "Pronostico (forecasting)",
+        "BigQuery ML"
+      ],
       "contexto": "Aplicadas en el modelo de pronostico de inventario en GTEC, en los modelos de propension del bloque GA Four y en el proyecto final del diplomado de ciencia de datos."
     },
     {
       "id": "hab-ia",
       "categoria": "IA y Herramientas",
-      "items": ["Agentes LLM (Gemini, Claude Code, Codex, Cursor)", "Ingenieria de prompts", "Git", "Jupyter", "FastAPI"],
+      "items": [
+        "Agentes LLM (Gemini, Claude Code, Codex, Cursor)",
+        "Ingenieria de prompts",
+        "Git",
+        "Jupyter",
+        "FastAPI"
+      ],
       "contexto": "Nucleo del trabajo actual en GlobalLogic: construccion de integraciones de agentes LLM y frameworks de prompts que generan y refactorizan LookML automaticamente. Tambien es la base de las dos skills de agentes publicadas en looker-open-source."
     }
   ],
-
   "experiencia": [
     {
       "id": "exp-globallogic",
@@ -66,13 +95,25 @@
       "fin": null,
       "actual": true,
       "periodo_texto": "Agosto 2024 - Presente",
-      "tecnologias": ["Gemini", "Claude Code", "Codex", "Cursor", "LookML", "Python", "BigQuery", "Google Cloud"],
+      "tecnologias": [
+        "Gemini",
+        "Claude Code",
+        "Codex",
+        "Cursor",
+        "LookML",
+        "Python",
+        "BigQuery",
+        "Google Cloud"
+      ],
       "logros": [
         "Construyo integraciones de agentes LLM y frameworks de prompts (Gemini, Claude Code, Codex, Cursor) que generan y refactorizan LookML automaticamente, acelerando la entrega de dashboards.",
         "Diseno una metodologia LookML/Python/BigQuery adoptada en varios proyectos, que redujo 30% el tiempo de desarrollo.",
         "Construyo un generador de datos sinteticos en Python/BigQuery para construccion de dashboards y demos, que redujo 40% el tiempo de creacion de datos.",
         "Lidero talleres con clientes para definir KPIs, drill-downs y visualizaciones de dashboards de marketing llevados a produccion."
-      ]
+      ],
+      "como_llegue": "Se movio buscando crecimiento profesional y personal. Lo que termino de decidirlo fue el equipo: multidisciplinario y distribuido, con colegas en Estados Unidos, Europa y Corea. Y volvia a trabajar directamente con Google, esta vez creando productos nuevos ademas de mantener los existentes.",
+      "dia_a_dia": "Construccion de productos nuevos para Google y mantenimiento de los existentes, coordinando a diario con equipos en Estados Unidos, Europa y Corea.",
+      "lo_que_mas_le_gusta": "Hay espacio real para experimentar, y la mayoria de esos experimentos terminan en produccion. Esa es la diferencia entre experimentar y entretenerse."
     },
     {
       "id": "exp-gtec",
@@ -82,12 +123,27 @@
       "fin": "2024-08",
       "actual": false,
       "periodo_texto": "Diciembre 2023 - Agosto 2024",
-      "tecnologias": ["Looker", "Python", "BigQuery", "Dataflow"],
+      "tecnologias": [
+        "Looker",
+        "Python",
+        "BigQuery",
+        "Dataflow"
+      ],
       "logros": [
         "Implemento un modelo de pronostico de inventario que redujo 30% el sobreinventario del cliente.",
         "Se hizo cargo de la ingesta de datos, la visualizacion y el analisis de KPIs con Python, BigQuery, Dataflow y Looker.",
         "Desarrollo y mantuvo modelos de datos para analitica predictiva, mejorando el desempeno de los dashboards."
-      ]
+      ],
+      "como_llegue": "GTEC lo contacto para una posicion de analista de datos enfocada a Google Cloud: exactamente el salto de soporte a desarrollo que estaba buscando.",
+      "dia_a_dia": "Proyectos desde cero. Recoleccion de datos con pipelines, carga a BigQuery, y de ahi consultas, optimizacion de queries y creacion de tablas y vistas segun la base. Trabajaba en dos frentes a la vez: con el equipo de ingenieria de datos del lado tecnico, y directamente con el cliente para definir que metricas necesitaba y que preguntas de negocio debia responder cada dashboard.",
+      "sectores": [
+        "Farmacias",
+        "Retail",
+        "Marketing",
+        "Inventarios"
+      ],
+      "por_que_me_gusto": "Eran proyectos cien por ciento reales y en produccion, no ejercicios. Pasar por farmacias, retail, marketing e inventarios en pocos meses le dio amplitud: cada industria le hace preguntas distintas a los mismos datos.",
+      "por_que_sali": "Crecimiento profesional y personal. La oportunidad en GlobalLogic era volver a trabajar directamente con Google, ahora construyendo producto en vez de consultoria."
     },
     {
       "id": "exp-infosys",
@@ -97,15 +153,25 @@
       "fin": "2023-12",
       "actual": false,
       "periodo_texto": "Diciembre 2021 - Diciembre 2023",
-      "tecnologias": ["Looker", "PostgreSQL", "MySQL", "SQL"],
+      "tecnologias": [
+        "Looker",
+        "PostgreSQL",
+        "MySQL",
+        "SQL"
+      ],
       "logros": [
         "Resolvio mas de 400 casos de analitica de datos para clientes de Looker, elevando la satisfaccion promedio del cliente a 4.5/5.",
         "Implemento politicas de gobierno de datos en multiples instancias de Looker, asegurando cumplimiento y calidad de datos.",
         "Diseno dashboards para clientes y optimizo conexiones de Looker a PostgreSQL, MySQL y otras bases de datos."
-      ]
+      ],
+      "como_llegue": "Infosys lo contacto para su programa de formacion: la consultora contrata recien egresados, sepan programar o no, los entrena y los va colocando en proyectos. Edher pidio explicitamente que lo asignaran a la cuenta de Google. La manager acepto, y ahi arranco su carrera en datos.",
+      "dia_a_dia": "Soporte tecnico a clientes de Google que usaban Looker. Los clientes levantaban bugs, reportes y problemas de la herramienta; varios llegaban con miedo real de perder sus datos o su codigo. La atencion era por ticket via correo, por chat en vivo, y por videollamada cuando la gravedad del caso lo ameritaba.",
+      "progresion": "Un ano como agente de soporte. Despues ascendio a SME (Subject Matter Expert): quedo a cargo de un grupo de agentes, monitoreando su desempeno y organizando que quienes tenian mejores resultados compartieran sus tacticas con el resto. La idea era que el equipo subiera en conjunto, no que destacaran individuos.",
+      "casos_complejos": "Como SME atendia los casos que nadie mas sacaba: integraciones con la API de Looker, el SDK, llamadas a APIs externas, y problemas donde se cruzaban los datos con el modelo semantico.",
+      "aprendizajes": "Tratar con clientes molestos sin perder el profesionalismo, y la disciplina de dar la respuesta correcta en lugar de la respuesta rapida. Mas de 400 casos resueltos dejan una intuicion de producto que no se consigue construyendo: sabes por donde se rompe una herramienta porque la viste romperse de todas las formas posibles.",
+      "por_que_sali": "Queria construir, no solo atender tickets. En soporte resuelves lo que otros disenaron; el siguiente paso natural era desarrollar proyectos propios de principio a fin."
     }
   ],
-
   "proyectos": [
     {
       "id": "proy-looker-architect",
@@ -114,7 +180,11 @@
       "organizacion": "looker-open-source (Google)",
       "tipo": "Skill de agente de IA",
       "descripcion": "Skill de agente de IA que disena y genera el andamiaje de proyectos LookML limpios y bien estructurados.",
-      "tecnologias": ["LookML", "Agentes LLM", "Ingenieria de prompts"],
+      "tecnologias": [
+        "LookML",
+        "Agentes LLM",
+        "Ingenieria de prompts"
+      ],
       "publico": true
     },
     {
@@ -124,7 +194,11 @@
       "organizacion": "looker-open-source (Google)",
       "tipo": "Skill de agente de IA",
       "descripcion": "Skill de agente de IA que genera y refactoriza LookML orientado a desempeno.",
-      "tecnologias": ["LookML", "Agentes LLM", "Optimizacion de consultas"],
+      "tecnologias": [
+        "LookML",
+        "Agentes LLM",
+        "Optimizacion de consultas"
+      ],
       "publico": true
     },
     {
@@ -134,7 +208,12 @@
       "organizacion": "looker-open-source (Google)",
       "tipo": "Bloque de Looker",
       "descripcion": "Bloque de Looker para monitorear y optimizar agentes de IA generativa sobre BigQuery Agent Analytics. Es la pieza de observabilidad que este mismo agente de CV reutiliza: su telemetria se escribe en BigQuery y se monitorea con este bloque.",
-      "tecnologias": ["Looker", "LookML", "BigQuery", "Observabilidad de agentes GenAI"],
+      "tecnologias": [
+        "Looker",
+        "LookML",
+        "BigQuery",
+        "Observabilidad de agentes GenAI"
+      ],
       "publico": true
     },
     {
@@ -144,7 +223,12 @@
       "organizacion": "looker-open-source (Google)",
       "tipo": "Bloque de Looker",
       "descripcion": "Bloque de GA4 con sesionizacion incremental, modelos de propension en BigQuery ML y dashboards de cohortes.",
-      "tecnologias": ["Looker", "LookML", "BigQuery ML", "GA4"],
+      "tecnologias": [
+        "Looker",
+        "LookML",
+        "BigQuery ML",
+        "GA4"
+      ],
       "publico": true
     },
     {
@@ -154,11 +238,18 @@
       "organizacion": "Proyecto personal / Reto IA Banorte",
       "tipo": "Sistema agentico",
       "descripcion": "Este mismo agente. Servidor compatible con el protocolo Open Responses desplegado en Cloud Run, con Claude como modelo, herramientas sobre un CV estructurado, guardrails de entrada y salida, suite de evaluacion automatizada y telemetria en BigQuery monitoreada con el Agent Analytics Block.",
-      "tecnologias": ["Python", "FastAPI", "Claude", "Open Responses", "Cloud Run", "BigQuery", "Docker"],
+      "tecnologias": [
+        "Python",
+        "FastAPI",
+        "Claude",
+        "Open Responses",
+        "Cloud Run",
+        "BigQuery",
+        "Docker"
+      ],
       "publico": true
     }
   ],
-
   "open_source": {
     "id": "open-source",
     "organizacion": "looker-open-source (Google)",
@@ -166,7 +257,6 @@
     "pull_requests_mergeados": 45,
     "descripcion": "Contribuidor a la organizacion looker-open-source de Google, con mas de 30 bloques de Looker y 45 pull requests mergeados. Autor principal de tres de esos proyectos."
   },
-
   "educacion": [
     {
       "id": "edu-mna",
@@ -189,16 +279,31 @@
       "institucion": "Universidad Autonoma Metropolitana",
       "periodo": "2016 - 2021",
       "en_curso": false,
-      "detalle": "Medalla al Merito Universitario por el promedio mas alto de la generacion."
+      "detalle": "Medalla al Merito Universitario por el promedio mas alto de la generacion. La carrera cubrio generacion de energia por metodos renovables y no renovables: solar, eolica, biomasa, nuclear y termica.",
+      "proyecto_terminal": "Diseno de una planta generadora de energia acoplada a una desaladora. El agua de mar se desalaba por osmosis inversa, pasaba por calderas e intercambiadores de calor para producir vapor a alta presion, y ese vapor movia una turbina. El calor remanente no se tiraba: se reutilizaba para seguir desalando y para dar agua potable a las poblaciones cercanas a la planta. Un mismo proceso resolvia dos necesidades, energia y agua.",
+      "como_empezo_a_programar": "Al final de la carrera entro a la programacion por la puerta del hardware: proyectos de laboratorio con Raspberry Pi, Arduino y sensores. Ahi aprendio a programar de verdad."
     }
   ],
-
   "certificaciones": [
-    { "id": "cert-ace", "nombre": "Associate Cloud Engineer", "emisor": "Google Cloud", "anio": 2026 },
-    { "id": "cert-genai", "nombre": "Generative AI Leader", "emisor": "Google Cloud", "anio": 2025 },
-    { "id": "cert-de", "nombre": "Data Engineer", "emisor": "DataCamp", "anio": 2025 }
+    {
+      "id": "cert-ace",
+      "nombre": "Associate Cloud Engineer",
+      "emisor": "Google Cloud",
+      "anio": 2026
+    },
+    {
+      "id": "cert-genai",
+      "nombre": "Generative AI Leader",
+      "emisor": "Google Cloud",
+      "anio": 2025
+    },
+    {
+      "id": "cert-de",
+      "nombre": "Data Engineer",
+      "emisor": "DataCamp",
+      "anio": 2025
+    }
   ],
-
   "preferencias_rol": {
     "id": "preferencias-rol",
     "enfoque": "Inteligencia artificial. Edher quiere que su siguiente rol sea de IA de tiempo completo, no de analitica con IA como accesorio.",
@@ -224,7 +329,6 @@
     ],
     "modalidad": "Abierto a remoto e hibrido en Ciudad de Mexico."
   },
-
   "intereses": {
     "id": "intereses",
     "_nota": "Lado humano del perfil. Se responde solo si preguntan; no se mete a la fuerza en respuestas profesionales.",
@@ -253,5 +357,25 @@
         "_revisar": "Edher: confirma la lista de modelos de video. Entendi Veo y Sora, y un tercero que no alcance a distinguir en el audio (¿Seedance? ¿Kling?)."
       }
     ]
-  }
+  },
+  "trayectoria": {
+    "id": "trayectoria",
+    "titulo": "De la ingenieria en energia a la IA",
+    "arco": "Edher no empezo en datos. Estudio Ingenieria en Energia en la UAM y se graduo con la Medalla al Merito Universitario por el promedio mas alto de su generacion. Al final de la carrera llego a la programacion por el hardware, automatizando sensores con Arduino y Raspberry Pi en proyectos de laboratorio, y de ahi salto a los datos con Python de forma autodidacta: cursos en linea, YouTube y libros. Ese salto lo llevo a Infosys, donde pidio que lo pusieran en la cuenta de Google, y desde entonces toda su carrera se construyo sobre Google Cloud: soporte experto en Looker, consultoria de datos de punta a punta, y hoy construccion de producto con agentes LLM.",
+    "hilo_conductor": "El patron se repite en cada etapa: aprende por su cuenta, pide explicitamente el lugar donde quiere estar, y se mueve cuando deja de construir. Salio de soporte porque queria desarrollar; salio de consultoria porque queria hacer producto.",
+    "formacion_autodidacta": "Python y ciencia de datos los aprendio por su cuenta con cursos en linea, videos y libros, antes de que fueran su trabajo. La maestria en Inteligencia Artificial Aplicada en el Tec de Monterrey, en curso, es la formalizacion de ese mismo camino."
+  },
+  "forma_de_trabajar": {
+    "id": "forma-de-trabajar",
+    "de_que_esta_orgulloso": "Que practicamente todo lo que construye sale a produccion y es open source. Los clientes de Google pueden descargarlo, usarlo, contribuirle y levantar issues sobre su codigo.",
+    "relacion_con_la_comunidad": "Esta en comunicacion constante con la comunidad que usa lo que publica, y funciona en las dos direcciones: el les ayuda a mejorar su implementacion y ellos le senalan que mejorar en la suya. Trabajar en abierto significa que su codigo se revisa solo.",
+    "cara_al_cliente": "Viene de dos anos de soporte tecnico directo, asi que esta comodo frente al cliente: traducir un problema de negocio a una solucion tecnica, sostener la calma cuando la persona del otro lado esta molesta, y llevar talleres de KPIs con areas no tecnicas.",
+    "equipos_distribuidos": "Hoy trabaja a diario con equipos en Estados Unidos, Europa y Corea. Ingles profesional y coordinacion asincrona entre husos horarios."
+  },
+  "_por_confirmar": [
+    "GTEC: los dashboards eran en Looker Studio o en Looker? Del audio entendi Studio.",
+    "GlobalLogic: los labs son experimentos internos del equipo?",
+    "SME se expande como Subject Matter Expert?",
+    "Intereses: falta el tercer modelo de video. Veo y Sora quedaron confirmados."
+  ]
 }
