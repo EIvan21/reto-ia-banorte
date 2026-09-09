@@ -50,26 +50,45 @@ es deliberado — un agente que sólo dice que sí no le sirve a quien tiene que
 
 ## Decisiones técnicas y trade-offs
 
-### 1. Sin base vectorial. El CV es JSON estructurado consultado por herramientas
+### 1. Sin base vectorial — y la decisión está medida, no opinada
 
-El CV completo son ~4 000 tokens. Un índice de embeddings sobre un documento de ese tamaño
-es sobre-ingeniería: agrega un servicio que operar, respaldar y pagar, para resolver un
-problema de recuperación que no existe a esa escala.
+Es la primera pregunta que hace cualquiera que ve el proyecto, así que no se responde con una
+opinión. `evals/medir_corpus.py` compara la recuperación contra dos bancos de preguntas: unas
+que comparten vocabulario con el CV, y otras **parafraseadas**, como habla quien no lo ha leído.
+Ese segundo banco es justamente el caso que un índice vectorial resuelve y uno léxico no puede.
 
-En su lugar el CV vive como JSON con **un `id` estable por entrada**, y el modelo lo consulta
-con seis herramientas tipadas. Lo que se gana:
+Corpus actual: **27 entradas, 30 855 caracteres, 12 940 tokens reales** (medidos con la API, no
+estimados — 1.3% de la ventana de contexto del modelo).
+
+| Métrica | Léxicas | Semánticas |
+|---|---|---|
+| recall@8 | 100% | 100% |
+| recall@3 | 92% | 75% |
+| MRR | 0.74 | **0.61** |
+
+**Lo léxico no falla: rankea peor.** La brecha real no está en la cobertura, está en el orden.
+Y como el modelo recibe 8 candidatos y escoge, ese error de orden **no llega al usuario**: la
+entrada correcta ya venía en el paquete. Los embeddings mejorarían el ranking, pero comprarían
+una mejora que hoy nadie percibe.
+
+Una honestidad sobre la medición: con 27 entradas, devolver 8 es entregar casi un tercio del CV,
+así que un recall@8 del 100% mide poco. Por eso el veredicto se apoya en MRR y recall@3, que sí
+discriminan. Y el banco son 24 preguntas escritas por mí, no un conjunto estándar — es evidencia,
+no prueba.
+
+Además, el enfoque por herramientas compra tres cosas que un índice de embeddings no da:
 
 - **Trazabilidad.** Cada herramienta devuelve `_citas` con los ids que respaldan el resultado.
   Se puede auditar de dónde salió cada afirmación.
-- **Determinismo.** La misma pregunta recupera exactamente el mismo contexto, lo que hace que
-  la suite de evaluación sea reproducible. Con recuperación vectorial, un eval que falla te deja
-  sin saber si cambió el modelo o cambió el ranking.
+- **Determinismo.** La misma pregunta recupera el mismo contexto, lo que hace reproducible la
+  suite de evaluación. Con recuperación vectorial, un eval que falla te deja sin saber si cambió
+  el modelo o cambió el ranking.
 - **Cero infraestructura extra.**
 
-**El trade-off:** esto no escala a un corpus grande. Si mañana hubiera que indexar 200 documentos
-de proyectos, la recuperación por palabra clave se queda corta y tocaría meter búsqueda vectorial.
-La decisión es correcta *para este tamaño de corpus*, y está aislada en `app/tools.py` para que
-cambiarla no toque el resto del sistema.
+**Cuándo cambiaría la decisión, y cómo lo sabría:** si se baja `k` para ahorrar contexto —a k=3
+las semánticas caen a 75%—, o si el corpus crece hasta que 8 candidatos ya no lo cubran. Correr
+`medir_corpus.py` responde la pregunta en segundos, y la implementación está aislada en
+`app/tools.py` para que cambiarla no toque el resto del sistema.
 
 **Un bug real que esto ayudó a encontrar:** la primera versión puntuaba por subcadena, así que
 `"con"` empataba dentro de `"Construyo"` y `"Consultant"`. La pregunta más importante del reto

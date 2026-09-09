@@ -1,15 +1,30 @@
 """Herramientas que el modelo usa para consultar el CV.
 
-Decision de diseno: NO hay base vectorial. El CV son ~6k tokens y creciendo, asi que por ahora
-un indice de embeddings seria sobre-ingenieria pura. En su lugar el CV vive como
-JSON estructurado y el modelo lo consulta con herramientas tipadas. Esto compra
-tres cosas que un RAG vectorial sobre un documento tan chico no da:
+Decision de diseno: NO hay base vectorial, y la decision esta medida, no opinada.
+`evals/medir_corpus.py` compara la recuperacion contra dos bancos de preguntas:
+unas que comparten vocabulario con el CV y otras parafraseadas, como habla quien
+no lo ha leido. Los numeros con 27 entradas y 12,940 tokens reales:
+
+    recall@8   100% lexicas | 100% semanticas
+    recall@3    92% lexicas |  75% semanticas
+    MRR        0.74 lexicas | 0.61 semanticas
+
+Lo lexico NO falla: rankea peor en lenguaje natural. Los vectores mejorarian el
+ORDEN, no la cobertura, y como el modelo recibe 8 candidatos y escoge, ese error
+de orden no llega al usuario -- la entrada correcta ya venia en el paquete.
+
+Ademas, el enfoque por herramientas compra tres cosas que un indice de embeddings
+no da:
 
   1. Trazabilidad: cada resultado trae el 'id' de la entrada que lo respaldo,
      asi que se puede verificar de donde salio cada afirmacion.
   2. Determinismo: la misma pregunta devuelve exactamente el mismo contexto,
      lo cual hace que la suite de evaluacion sea reproducible.
   3. Cero infraestructura extra que operar, respaldar y pagar.
+
+Cuando esto deje de ser cierto es medible, no intuitivo: si se baja k para
+ahorrar contexto, o si el corpus crece hasta que 8 candidatos ya no lo cubran.
+Correr medir_corpus.py responde la pregunta en segundos.
 
 Todas las herramientas devuelven un dict con la llave "_citas": la lista de ids
 del CV que fundamentan el resultado. El guardrail de salida verifica que la
