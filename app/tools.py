@@ -18,6 +18,7 @@ respuesta final se apoye en al menos una cita.
 
 from __future__ import annotations
 
+import math
 import re
 import unicodedata
 from functools import lru_cache
@@ -87,6 +88,11 @@ _GRUPOS_SINONIMOS: list[set[str]] = [
      "auditar", "auditoria", "cuello de botella"},
     {"repetitivo", "automatizar", "automatizacion", "andamiaje", "scaffolding",
      "plantilla", "estructura"},
+    {"motivacion", "motiva", "motivo", "meta", "metas", "futuro", "anos", "anios",
+     "planes", "aspiracion", "aspiraciones", "vision", "goals"},
+    {"pyme", "pymes", "negocio", "negocios", "emprendimiento", "familia", "familiar",
+     "pequenas empresas", "pequena empresa"},
+    {"divulgacion", "ensenar", "explicar", "compartir", "contenido", "creador"},
 ]
 
 
@@ -225,7 +231,44 @@ def _expandir_consulta(consulta: str) -> set[str]:
     return expandidos
 
 
-def _puntuar(entrada: Any, terminos: set[str]) -> int:
+# Tope para terminos que no aparecen en el CV: no se les puede calcular IDF, y
+# conviene que pesen como algo raro y no como algo comun.
+_IDF_MAXIMO = 3.0
+
+
+@lru_cache(maxsize=1)
+def _idf() -> dict[str, float]:
+    """IDF por token sobre las entradas del CV.
+
+    Es el arreglo al sintoma medido: conforme el CV crecio en texto narrativo,
+    palabras como "open source", "agentes" o "datos" empezaron a aparecer en casi
+    todas las entradas, los puntajes se aplanaron (siete entradas empatadas en 13)
+    y la busqueda dejo de distinguir entre una entrada que ES un proyecto open
+    source y una que solo lo menciona.
+
+    IDF penaliza lo que esta en todas partes y premia lo que discrimina. Con 26
+    entradas se calcula una vez por proceso y es instantaneo.
+    """
+    from collections import Counter
+
+    cv = load_cv()
+    documentos: list[set[str]] = []
+    for seccion in _SECCIONES:
+        for entrada in _entradas_de_seccion(cv, seccion):
+            documentos.append(set(_tokenizar(_texto_de(entrada))))
+
+    n = len(documentos) or 1
+    frecuencia: Counter[str] = Counter()
+    for doc in documentos:
+        frecuencia.update(doc)
+
+    return {
+        token: min(_IDF_MAXIMO, math.log((n + 1) / (df + 1)) + 1.0)
+        for token, df in frecuencia.items()
+    }
+
+
+def _puntuar(entrada: Any, terminos: set[str]) -> float:
     """Puntua una entrada del CV contra los terminos de la consulta.
 
     La coincidencia es por palabra completa, no por subcadena: de lo contrario
@@ -236,21 +279,29 @@ def _puntuar(entrada: Any, terminos: set[str]) -> int:
     """
     texto = _normalizar(_texto_de(entrada))
     palabras = set(_tokenizar(texto))
+    idf = _idf()
 
-    puntaje = 0
+    puntaje = 0.0
     for t in terminos:
         if not t:
             continue
         if " " in t:
             if t in texto:
-                puntaje += _PESO_FRASE
+                # Las frases discriminan por si solas; se les da el IDF de su
+                # token mas raro.
+                peso_idf = min((idf.get(x, _IDF_MAXIMO) for x in t.split()), default=1.0)
+                puntaje += _PESO_FRASE * peso_idf
         elif t in palabras:
-            puntaje += _PESO_EXACTO
+            puntaje += _PESO_EXACTO * idf.get(t, _IDF_MAXIMO)
         elif any(p.startswith(t) or t.startswith(p) for p in palabras if len(p) >= 4):
-            puntaje += _PESO_PREFIJO
+            puntaje += _PESO_PREFIJO * idf.get(t, _IDF_MAXIMO)
         elif any(_es_variante(t, p) for p in palabras):
-            puntaje += _PESO_RAIZ
-    return puntaje
+            puntaje += _PESO_RAIZ * idf.get(t, _IDF_MAXIMO)
+
+    # Normalizacion por longitud. Sin esto las entradas narrativas largas
+    # (trayectoria, forma_de_trabajar) ganan por acumulacion: mas texto es mas
+    # superficie donde caer, aunque el tema central sea otro.
+    return puntaje / (1.0 + math.log(1 + len(palabras) / 50))
 
 
 @lru_cache(maxsize=1)

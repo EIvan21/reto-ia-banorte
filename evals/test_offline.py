@@ -75,7 +75,8 @@ def test_el_cv_no_contiene_telefono():
         ("¿Cuál ha sido tu experiencia trabajando con modelos de lenguaje?", "exp-globallogic"),
         ("¿Qué experiencia tiene con LLM?", "hab-ia"),
         ("¿Tiene experiencia desplegando en la nube?", "hab-cloud"),
-        ("¿Qué contribuciones open source tiene?", "proy-looker-architect"),
+        ("¿Qué contribuciones open source tiene?", "open-source"),
+        ("¿Qué es el Looker Architect?", "proy-looker-architect"),
         ("¿Qué tipo de rol busca?", "preferencias-rol"),
         ("Háblame de su trabajo en Infosys", "exp-infosys"),
         ("¿Qué estudió en la universidad?", "edu-licenciatura"),
@@ -449,4 +450,24 @@ def test_el_enum_de_la_herramienta_cubre_todas_las_secciones():
     assert enum == set(_SECCIONES), (
         f"desincronizado. Falta en el enum: {set(_SECCIONES) - enum}; "
         f"sobra en el enum: {enum - set(_SECCIONES)}"
+    )
+
+
+def test_idf_evita_que_las_entradas_narrativas_dominen():
+    """Las entradas largas mencionan de todo. Sin IDF ni normalizacion por
+    longitud ganaban por acumulacion: al crecer el CV, 'forma-de-trabajar'
+    quedaba por encima de los proyectos en una pregunta sobre open source.
+    """
+    resultado = tools.buscar_cv("¿Qué contribuciones open source tiene?", "")
+    citas = resultado["_citas"]
+    assert citas[0] in ("open-source", "proy-ga-four", "proy-agent-analytics"), (
+        f"el primer resultado deberia ser una entrada de open source, fue {citas[0]}"
+    )
+    narrativas = {"forma-de-trabajar", "trayectoria"}
+    proyectos = {c for c in citas[:4] if c.startswith("proy-") or c == "open-source"}
+    assert len(proyectos) >= 2, (
+        f"se esperaban al menos 2 entradas de proyecto en el top 4, hubo {citas[:4]}"
+    )
+    assert not (narrativas & set(citas[:2])), (
+        f"una entrada narrativa no deberia encabezar esta pregunta: {citas[:2]}"
     )

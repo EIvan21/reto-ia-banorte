@@ -222,12 +222,12 @@
       "publico": true,
       "de_donde_salio_la_idea": "La idea nacio en el equipo. Los clientes de Google construyen agentes enfocados al flujo de datos, y surgio la pregunta de cuanto los estaban usando realmente dentro de sus ambientes. Nadie tenia esa respuesta. Los datos existian en BigQuery, pero sin capa de visualizacion ni de interpretacion. Ahi entro Edher y construyo el proyecto completo.",
       "que_mide": [
-        "Cuanto se usan los agentes en total",
-        "Que agentes son los mas utilizados",
-        "Que preguntas les hacen con mas frecuencia",
+        "Cuanto usan las personas a los agentes",
+        "Que agente es el mas utilizado y en que proyecto",
+        "Cual es la pregunta mas repetida y que se pregunta mas",
         "En que categoria cae cada pregunta",
-        "Que tareas les encargan",
-        "Cuantos tokens consumen"
+        "Que tareas le encargan a cada agente",
+        "Cuantos tokens consume cada uno"
       ],
       "por_que_importa_en_una_organizacion_grande": "Tres usos concretos. Uno, evitar sobrecostos: sin medir el consumo de tokens no hay forma de saber que se esta gastando de mas. Dos, ver en que se esta enfocando la gente, que revela necesidades reales que nadie habia escrito en ningun lado. Y tres, acortar el tiempo de respuesta: cuando una pregunta se repite mucho, deja de tener sentido resolverla desde cero cada vez -- conviene documentarla o resolverla con recuperacion sobre una base de conocimiento, que responde al instante.",
       "impacto": "Fue un lanzamiento grande, anunciado en varios canales de Google. Es open source: cualquiera puede descargarlo, usarlo y contribuirle.",
@@ -285,17 +285,20 @@
       ],
       "como_funciona": "Le pides algo como 'un video de Bob Esponja bailando quebradita'. El guionista escribe el dialogo, el director de camaras define las tomas, otro agente genera la imagen de referencia (los modelos de video parten de un primer frame), y de ahi sale el clip. Un agente revisor juzga el resultado: si no paso, no se conforma con reintentar el mismo prompt, sino que decide QUE cambiar -- el prompt de la llamada al modelo, algo del guion, o la direccion de camaras -- y vuelve a tirar la toma hasta que pasa su criterio. Al final el editor pega todo.",
       "por_que_es_multiagente": "Los modelos de generacion de video producen clips de seis a diez segundos. Para un video largo hay que encadenar varios, y cada uno tiene que ser coherente con el anterior en historia, encuadre y continuidad. Eso no se resuelve con un prompt mas largo: se resuelve separando responsabilidades y metiendo puntos de control entre ellas.",
-      "integracion_tecnica": "Usa una plataforma multimedia de IA que da acceso por API a muchos modelos de video, imagen y audio bajo una sola suscripcion. El sistema de agentes y de skills corre en local; a los agentes se les pasa la documentacion de la API y ellos arman las llamadas segun lo que toque en cada etapa. Los clips se guardan en local y ahi mismo se editan.",
+      "integracion_tecnica": "Usa fal.ai, que da acceso por API a muchos modelos de video, imagen y audio bajo una sola suscripcion, en vez de integrar cada proveedor por separado. Los modelos de video que emplea son Veo, Sora y Seedance. El sistema de agentes y de skills corre en local; a los agentes se les pasa la documentacion de la API y ellos arman las llamadas segun lo que toque en cada etapa. Los clips se guardan en local y ahi mismo se editan.",
       "por_que_importa": "Es el mismo patron que Edher quiere hacer profesionalmente, construido por gusto: roles especializados, revision automatica con criterio, reintentos dirigidos en vez de ciegos, y orquestacion de varios modelos por API. Un agente que juzga la salida de otro y decide que corregir es exactamente el problema dificil de los sistemas agenticos.",
-      "donde_verlo": "Los videos se publican en su canal de TikTok.",
       "tecnologias": [
         "Sistemas multiagente",
-        "Modelos de generacion de video (Veo, Sora)",
+        "fal.ai",
+        "Veo",
+        "Sora",
+        "Seedance",
         "Generacion de imagen",
         "Ingenieria de prompts",
         "Integracion por API",
         "Python"
-      ]
+      ],
+      "estado": "Proyecto personal en curso. Los videos se publican en su canal de TikTok, que por ahora tiene poco alcance: es un espacio de experimentacion con modelos generativos, no un proyecto de audiencia."
     }
   ],
   "open_source": {
@@ -401,8 +404,9 @@
     "tecnicos": [
       {
         "nombre": "Creacion de contenido visual con IA",
-        "detalle": "Produce contenido corto para TikTok con modelos de generacion de video como Veo y Sora. Es su via para mantenerse al dia con los modelos generativos por fuera del trabajo, no solo con los de texto.",
-        "_revisar": "Edher: confirma la lista de modelos de video. Entendi Veo y Sora, y un tercero que no alcance a distinguir en el audio (¿Seedance? ¿Kling?)."
+        "detalle": "Produce contenido corto para TikTok con modelos de generacion de video (Veo, Sora y Seedance) orquestados desde fal.ai. Es su via para mantenerse al dia con los modelos generativos por fuera del trabajo, no solo con los de texto.",
+        "_revisar": "Edher: confirma la lista de modelos de video. Entendi Veo y Sora, y un tercero que no alcance a distinguir en el audio (¿Seedance? ¿Kling?).",
+        "por_que_lo_hace": "Le sirve para mantenerse al dia con los modelos generativos por fuera del trabajo, y conecta con algo que le gustaria hacer mas: explicar y divulgar lo que va saliendo en IA."
       }
     ]
   },
@@ -411,7 +415,10 @@
     "titulo": "De la ingenieria en energia a la IA",
     "arco": "Edher no empezo en datos. Estudio Ingenieria en Energia en la UAM y se graduo con la Medalla al Merito Universitario por el promedio mas alto de su generacion. Al final de la carrera llego a la programacion por el hardware, automatizando sensores con Arduino y Raspberry Pi en proyectos de laboratorio, y de ahi salto a los datos con Python de forma autodidacta: cursos en linea, YouTube y libros. Ese salto lo llevo a Infosys, donde pidio que lo pusieran en la cuenta de Google, y desde entonces toda su carrera se construyo sobre Google Cloud: soporte experto en Looker, consultoria de datos de punta a punta, y hoy construccion de producto con agentes LLM.",
     "hilo_conductor": "El patron se repite en cada etapa: aprende por su cuenta, pide explicitamente el lugar donde quiere estar, y se mueve cuando deja de construir. Salio de soporte porque queria desarrollar; salio de consultoria porque queria hacer producto.",
-    "formacion_autodidacta": "Python y ciencia de datos los aprendio por su cuenta con cursos en linea, videos y libros, antes de que fueran su trabajo. La maestria en Inteligencia Artificial Aplicada en el Tec de Monterrey, en curso, es la formalizacion de ese mismo camino."
+    "formacion_autodidacta": "Python y ciencia de datos los aprendio por su cuenta con cursos en linea, videos y libros, antes de que fueran su trabajo. La maestria en Inteligencia Artificial Aplicada en el Tec de Monterrey, en curso, es la formalizacion de ese mismo camino.",
+    "por_que_la_maestria_en_ia": "No fue por el titulo. Edher quiere aplicar soluciones de IA a negocios pequenos y medianos, y el caso concreto que lo movio es el de su propia familia: un negocio chico al que le quiere ayudar a ordenar sus flujos, a entender sus datos y, sobre eso, a apoyarse en IA. Para hacerlo bien le faltaban las bases formales, y por eso entro a la Maestria en Inteligencia Artificial Aplicada del Tec de Monterrey. El plan es empezar por el negocio de sus padres y despues llevar lo aprendido a otros negocios como proyectos propios.",
+    "donde_se_ve_en_tres_anios": "Con la maestria terminada y trabajando en la punta del tema: los modelos que van saliendo, las herramientas nuevas, las formas de trabajo que todavia no se estandarizan. Le atrae tambien crear contenido sobre IA y ser de los primeros en explicar lo que va apareciendo, siempre que no compita con sus responsabilidades profesionales.",
+    "el_hilo_de_fondo": "Hay un patron que atraviesa toda su trayectoria: le interesa la tecnologia que aterriza en algo util para alguien concreto. Su proyecto de titulacion en energia no solo generaba electricidad, tambien dejaba agua potable a las poblaciones junto a la planta. Sus skills open source existen porque a el le dolia el trabajo repetitivo y decidio resolverselo a todos. Y la maestria en IA salio de querer ayudarle al negocio de su familia. No es tecnologia por la tecnologia."
   },
   "forma_de_trabajar": {
     "id": "forma-de-trabajar",
@@ -426,10 +433,7 @@
     "uso_de_ia_en_su_proceso": "Usa IA como una fuente mas dentro de su proceso de investigacion, segun el caso, no como sustituto de entender el problema. Es consistente con su trabajo: construye agentes LLM, asi que conoce de primera mano donde ayudan y donde no hay que creerles."
   },
   "_por_confirmar": [
-    "Video: como se llama la plataforma multimedia de IA que usa por API?",
-    "Video: cual es el tercer modelo de generacion de video? Veo y Sora confirmados.",
-    "Video: incluir el handle de TikTok en el agente, o solo mencionar que existe el canal?",
-    "Video: hay metricas publicables (vistas, seguidores)?",
-    "Agent Analytics: ademas de tokens, se median horas invertidas? No entendi bien esa parte del audio."
+    "Video: incluir el handle de TikTok en el agente, o solo mencionar que existe el canal? Sigue sin respuesta.",
+    "Video: Seedance lleva numero de version? Del audio entendi algo como 'dos tres'."
   ]
 }
