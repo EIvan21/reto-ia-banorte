@@ -1,6 +1,6 @@
 """Herramientas que el modelo usa para consultar el CV.
 
-Decision de diseno: NO hay base vectorial. El CV completo son ~4k tokens, asi que
+Decision de diseno: NO hay base vectorial. El CV son ~6k tokens y creciendo, asi que por ahora
 un indice de embeddings seria sobre-ingenieria pura. En su lugar el CV vive como
 JSON estructurado y el modelo lo consulta con herramientas tipadas. Esto compra
 tres cosas que un RAG vectorial sobre un documento tan chico no da:
@@ -72,6 +72,13 @@ _GRUPOS_SINONIMOS: list[set[str]] = [
     {"energia", "desaladora", "osmosis", "turbina", "planta", "arduino", "raspberry",
      "sensores", "hardware"},
     {"soporte", "tickets", "casos", "sme", "atencion", "clientes molestos"},
+    {"debilidad", "debilidades", "defecto", "defectos", "cuesta", "dificil",
+     "limitacion", "limitaciones", "flaqueza", "weakness", "mejorar"},
+    {"fortaleza", "fortalezas", "fuerte", "bueno", "reconocen", "strength", "destaca"},
+    {"liderazgo", "lider", "liderar", "lidera", "mentoria", "mentor", "leadership"},
+    {"jefe", "manager", "lider", "supervisor", "ambiente", "cultura", "boss"},
+    {"ayuda", "pedir ayuda", "preguntar", "duda", "dudas", "aprender", "aprende",
+     "investigar", "investigacion", "estudiar"},
 ]
 
 

@@ -113,7 +113,7 @@
       ],
       "como_llegue": "Se movio buscando crecimiento profesional y personal. Lo que termino de decidirlo fue el equipo: multidisciplinario y distribuido, con colegas en Estados Unidos, Europa y Corea. Y volvia a trabajar directamente con Google, esta vez creando productos nuevos ademas de mantener los existentes.",
       "dia_a_dia": "Construccion de productos nuevos para Google y mantenimiento de los existentes, coordinando a diario con equipos en Estados Unidos, Europa y Corea.",
-      "lo_que_mas_le_gusta": "Hay espacio real para experimentar, y la mayoria de esos experimentos terminan en produccion. Esa es la diferencia entre experimentar y entretenerse."
+      "lo_que_mas_le_gusta": "Hay espacio real para experimentar. Los labs son experimentos que el equipo desarrolla para evaluar si pueden lanzarse al cliente, y la mayoria termina en produccion. Esa es la diferencia entre experimentar y entretenerse."
     },
     {
       "id": "exp-gtec",
@@ -125,6 +125,7 @@
       "periodo_texto": "Diciembre 2023 - Agosto 2024",
       "tecnologias": [
         "Looker",
+        "Looker Studio",
         "Python",
         "BigQuery",
         "Dataflow"
@@ -135,7 +136,7 @@
         "Desarrollo y mantuvo modelos de datos para analitica predictiva, mejorando el desempeno de los dashboards."
       ],
       "como_llegue": "GTEC lo contacto para una posicion de analista de datos enfocada a Google Cloud: exactamente el salto de soporte a desarrollo que estaba buscando.",
-      "dia_a_dia": "Proyectos desde cero. Recoleccion de datos con pipelines, carga a BigQuery, y de ahi consultas, optimizacion de queries y creacion de tablas y vistas segun la base. Trabajaba en dos frentes a la vez: con el equipo de ingenieria de datos del lado tecnico, y directamente con el cliente para definir que metricas necesitaba y que preguntas de negocio debia responder cada dashboard.",
+      "dia_a_dia": "Proyectos desde cero. Recoleccion de datos con pipelines, carga a BigQuery, y de ahi consultas, optimizacion de queries y creacion de tablas y vistas segun la base. Los dashboards los construia tanto en Looker como en Looker Studio, segun lo que pedia cada cliente. Trabajaba en dos frentes a la vez: con el equipo de ingenieria de datos del lado tecnico, y directamente con el cliente para definir que metricas necesitaba y que preguntas de negocio debia responder cada dashboard.",
       "sectores": [
         "Farmacias",
         "Retail",
@@ -166,8 +167,8 @@
       ],
       "como_llegue": "Infosys lo contacto para su programa de formacion: la consultora contrata recien egresados, sepan programar o no, los entrena y los va colocando en proyectos. Edher pidio explicitamente que lo asignaran a la cuenta de Google. La manager acepto, y ahi arranco su carrera en datos.",
       "dia_a_dia": "Soporte tecnico a clientes de Google que usaban Looker. Los clientes levantaban bugs, reportes y problemas de la herramienta; varios llegaban con miedo real de perder sus datos o su codigo. La atencion era por ticket via correo, por chat en vivo, y por videollamada cuando la gravedad del caso lo ameritaba.",
-      "progresion": "Un ano como agente de soporte. Despues ascendio a SME (Subject Matter Expert): quedo a cargo de un grupo de agentes, monitoreando su desempeno y organizando que quienes tenian mejores resultados compartieran sus tacticas con el resto. La idea era que el equipo subiera en conjunto, no que destacaran individuos.",
-      "casos_complejos": "Como SME atendia los casos que nadie mas sacaba: integraciones con la API de Looker, el SDK, llamadas a APIs externas, y problemas donde se cruzaban los datos con el modelo semantico.",
+      "progresion": "Un ano como agente de soporte. Despues ascendio a SME (Subject Matter Expert) de Looker: quedo a cargo de un grupo de agentes, monitoreando su desempeno y organizando que quienes tenian mejores resultados compartieran sus tacticas con el resto. La idea era que el equipo subiera en conjunto, no que destacaran individuos.",
+      "casos_complejos": "Como SME de Looker atendia los casos que nadie mas sacaba: integraciones con la API de Looker, el SDK, llamadas a APIs externas, y problemas donde se cruzaban los datos con el modelo semantico.",
       "aprendizajes": "Tratar con clientes molestos sin perder el profesionalismo, y la disciplina de dar la respuesta correcta en lugar de la respuesta rapida. Mas de 400 casos resueltos dejan una intuicion de producto que no se consigue construyendo: sabes por donde se rompe una herramienta porque la viste romperse de todas las formas posibles.",
       "por_que_sali": "Queria construir, no solo atender tickets. En soporte resuelves lo que otros disenaron; el siguiente paso natural era desarrollar proyectos propios de principio a fin."
     }
@@ -370,12 +371,14 @@
     "de_que_esta_orgulloso": "Que practicamente todo lo que construye sale a produccion y es open source. Los clientes de Google pueden descargarlo, usarlo, contribuirle y levantar issues sobre su codigo.",
     "relacion_con_la_comunidad": "Esta en comunicacion constante con la comunidad que usa lo que publica, y funciona en las dos direcciones: el les ayuda a mejorar su implementacion y ellos le senalan que mejorar en la suya. Trabajar en abierto significa que su codigo se revisa solo.",
     "cara_al_cliente": "Viene de dos anos de soporte tecnico directo, asi que esta comodo frente al cliente: traducir un problema de negocio a una solucion tecnica, sostener la calma cuando la persona del otro lado esta molesta, y llevar talleres de KPIs con areas no tecnicas.",
-    "equipos_distribuidos": "Hoy trabaja a diario con equipos en Estados Unidos, Europa y Corea. Ingles profesional y coordinacion asincrona entre husos horarios."
+    "equipos_distribuidos": "Hoy trabaja a diario con equipos en Estados Unidos, Europa y Corea. Ingles profesional y coordinacion asincrona entre husos horarios.",
+    "ante_un_problema_que_no_sabe_resolver": "No le cuesta pedir ayuda y sabe a quien preguntarle. Su regla es no quedarse callado: si no sabe algo lo dice de frente, tanto a si mismo como al equipo. Literalmente pone sobre la mesa 'necesito revisar esto con calma', 'necesito profundizar mas', o pregunta quien del equipo domina el tema y puede orientarlo. Tambien se apoya en IA segun el caso. La idea de fondo es que no tener miedo a no saber es lo que permite avanzar rapido, y que las opiniones del equipo son informacion, no ruido.",
+    "lo_que_le_reconocen": "Integracion de equipo y comunicacion. Tiene inclinacion natural al liderazgo: jala al equipo a probar cosas distintas, propone reunirse a compartir ideas y hacer lluvia de ideas para ver que se puede mejorar. Con criterio, eso si: solo cuando aporta, porque tambien entiende que la gente tiene su trabajo y sus tiempos. Le importa mantener buena relacion con sus companeros y que el equipo se mantenga unido.",
+    "lo_que_le_cuesta": "Arrancar en solitario. Cuando el tema es nuevo, nadie del equipo lo domina y le toca empezar de cero, la parte dificil no es investigar sino decidir POR DONDE empezar a investigar. Se le junta con que no se conforma con lo primero que lee: necesita que le quede claro todo, y ese proceso es pesado. Sabe de antemano que va a quedar absorbido en el tema un buen rato, y esa certeza es justo lo que hace cuesta arriba el primer paso. Una vez adentro, el problema es el contrario: le cuesta soltarlo.",
+    "que_equipo_le_saca_lo_mejor": "Equipos y jefes que permiten colaborar y proponer sin limitar. Donde se pueda preguntar sin que te hagan sentir mal, tonto, o que la pregunta no tenia sentido. Su criterio es simple: donde te escuchan y te sientes valorado es donde das lo mejor. Es coherente con como el lidera -- en Infosys, como SME, su forma de subir al equipo fue que los agentes con mejores resultados compartieran sus tacticas con los demas.",
+    "uso_de_ia_en_su_proceso": "Usa IA como una fuente mas dentro de su proceso de investigacion, segun el caso, no como sustituto de entender el problema. Es consistente con su trabajo: construye agentes LLM, asi que conoce de primera mano donde ayudan y donde no hay que creerles."
   },
   "_por_confirmar": [
-    "GTEC: los dashboards eran en Looker Studio o en Looker? Del audio entendi Studio.",
-    "GlobalLogic: los labs son experimentos internos del equipo?",
-    "SME se expande como Subject Matter Expert?",
     "Intereses: falta el tercer modelo de video. Veo y Sora quedaron confirmados."
   ]
 }
