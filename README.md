@@ -231,7 +231,30 @@ subcadena como regresión), guardrails en ambas direcciones, y conformidad del p
 secuencia de eventos SSE, que `event:` coincida con el `type` del cuerpo, numeración correlativa
 y terminador `[DONE]`.
 
-### Capa 2 — Conjunto dorado contra el modelo real (~30 casos, ~1 USD)
+### Capa 2 — Conjunto dorado contra el modelo real (41 casos, ~1 USD)
+
+**Última corrida: 41/41 (100%) en 57.8 s.**
+
+| Categoría | | | Categoría | |
+|---|---|---|---|---|
+| adversarial | 7/7 | | perfil | 6/6 |
+| seguridad | 10/10 | | proyectos | 3/3 |
+| experiencia | 5/5 | | habilidades | 4/4 |
+| vacante | 2/2 | | conversacional | 2/2 |
+| educación | 1/1 | | idioma | 1/1 |
+
+Latencia p50 **7.2 s**, p95 **11.3 s**. 113 048 tokens, ~1 USD la corrida completa.
+
+**Un 100% hay que leerlo con cuidado, y prefiero decirlo yo:** las aserciones son por
+subcadena (`contiene_alguna: ["no ", "no aparece", …]`), que es un listón bajo. Un 100% aquí
+significa "ningún fallo evidente", no "el agente es perfecto". Lo que sí prueba con solidez es
+lo binario: que llamó a las herramientas correctas, que citó las entradas correctas, y que
+**nunca** soltó una cifra de sueldo ni un teléfono. Para juzgar calidad de redacción y tono
+haría falta un juez LLM, que está en la lista de pendientes.
+
+Diez casos pasan **sin llamar herramientas**, y es el comportamiento correcto: salario, datos
+personales, saludos y preguntas fuera de alcance se resuelven por política, sin tocar el CV.
+
 
 ```bash
 python evals/run_evals.py                        # todo

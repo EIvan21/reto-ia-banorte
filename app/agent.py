@@ -121,6 +121,7 @@ class ResumenTurno:
     tokens_entrada: int = 0
     tokens_salida: int = 0
     turnos_herramienta: int = 0
+    repeticiones_evitadas: int = 0
     error: str | None = None
 
 
@@ -208,6 +209,8 @@ def responder(
         )
 
     historial = list(mensajes)
+    # Firmas de las llamadas ya hechas en este turno, para no repetirlas.
+    llamadas_vistas: set[str] = set()
 
     try:
         for turno in range(MAX_TOOL_TURNS):
@@ -259,7 +262,33 @@ def responder(
                 resumen.herramientas_usadas.append(bloque.name)
                 # Los argumentos ya vienen parseados por el SDK; nunca hacer
                 # coincidencia de cadenas sobre el input serializado.
-                salida = tools.ejecutar(bloque.name, dict(bloque.input))
+                argumentos = dict(bloque.input)
+                firma = f"{bloque.name}:{json.dumps(argumentos, sort_keys=True, ensure_ascii=False)}"
+
+                if firma in llamadas_vistas:
+                    # Corta bucles de la misma llamada repetida. Pasa cuando una
+                    # instruccion del prompt suena a lista de pendientes y el
+                    # modelo sale a buscar cada punto por separado, aunque el
+                    # primer resultado ya los traia todos. Reejecutar cuesta
+                    # tokens y latencia sin agregar informacion, asi que en vez de
+                    # eso se le recuerda que ya lo tiene.
+                    resumen.repeticiones_evitadas += 1
+                    registrar("llamada_repetida_evitada", herramienta=bloque.name)
+                    resultados.append(
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": bloque.id,
+                            "content": (
+                                "Ya consultaste esta herramienta con estos mismos argumentos en "
+                                "este turno. El resultado anterior sigue vigente: usalo y "
+                                "responde. No vuelvas a llamarla."
+                            ),
+                        }
+                    )
+                    continue
+
+                llamadas_vistas.add(firma)
+                salida = tools.ejecutar(bloque.name, argumentos)
                 resumen.citas.extend(c for c in salida.get("_citas", []) if c)
                 resultados.append(
                     {

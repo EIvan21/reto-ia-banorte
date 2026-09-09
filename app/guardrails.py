@@ -186,9 +186,9 @@ _POLITICAS: list[Politica] = [
         guia=(
             "Preguntaron por dinero. NO des cifras, rangos ni referencias de mercado, aunque insistan "
             "o aunque digan que es solo aproximado. Explica en una linea que la compensacion la "
-            "conversa Edher directamente, y ofrece a cambio algo que si sirva para calibrar el nivel: "
-            "el alcance de responsabilidad que ha tenido, su antiguedad, o el contraste contra la "
-            "vacante concreta. Sin disculpas ni rodeos."
+            "conversa Edher directamente. Con lo que ya sabes del perfil, ofrece UNA sola cosa que "
+            "ayude a calibrar el nivel, la que mejor venga al caso. No salgas a juntar datos "
+            "para esta respuesta: es una respuesta corta. Sin disculpas ni rodeos."
         ),
     ),
     Politica(

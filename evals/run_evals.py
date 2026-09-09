@@ -31,7 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import yaml  # noqa: E402
 
-from app import agent  # noqa: E402
+from app import agent, guardrails  # noqa: E402
 
 RAIZ = Path(__file__).resolve().parent
 CONJUNTO = RAIZ / "golden.yaml"
@@ -64,12 +64,42 @@ class Resultado:
     citas: list[str] = field(default_factory=list)
     latencia_ms: int = 0
     tokens: int = 0
+    politicas: list[str] = field(default_factory=list)
+
+
+def _resultado_de_guardrail(caso: dict, veredicto) -> Resultado:
+    """El guardrail de entrada corto antes de llamar al modelo. Se evalua su
+    respuesta enlatada con los mismos criterios: tambien tiene que ser buena."""
+    texto = veredicto.respuesta_segura
+    plano = _plano(texto)
+    fallos = []
+    alguna = caso.get("contiene_alguna")
+    if alguna and not any(_plano(s) in plano for s in alguna):
+        fallos.append(f"no contiene ninguna de: {alguna}")
+    for sub in caso.get("no_contiene", []):
+        if _plano(sub) in plano:
+            fallos.append(f"contiene texto prohibido: {sub!r}")
+    return Resultado(
+        id=caso["id"], categoria=caso.get("categoria", "sin-categoria"),
+        aprobado=not fallos, fallos=fallos, respuesta=texto,
+        politicas=veredicto.etiquetas, latencia_ms=0,
+    )
 
 
 def evaluar_caso(caso: dict) -> Resultado:
+    mensajes = [{"role": "user", "content": caso["pregunta"]}]
+
+    # Se replica exactamente la ruta de produccion: guardrail de entrada primero,
+    # luego politicas de tema. Evaluar sin ellas medira un agente que no existe.
+    veredicto = guardrails.revisar_entrada(caso["pregunta"])
+    if not veredicto.permitido:
+        return _resultado_de_guardrail(caso, veredicto)
+
+    guias, etiquetas = guardrails.guias_de_politica(mensajes)
+
     inicio = time.perf_counter()
     resumen = None
-    for tipo, carga in agent.responder([{"role": "user", "content": caso["pregunta"]}]):
+    for tipo, carga in agent.responder(mensajes, "", guias):
         if tipo == "fin":
             resumen = carga
 
@@ -131,6 +161,7 @@ def evaluar_caso(caso: dict) -> Resultado:
         citas=resumen.citas if resumen else [],
         latencia_ms=latencia,
         tokens=(resumen.tokens_entrada + resumen.tokens_salida) if resumen else 0,
+        politicas=etiquetas,
     )
 
 
