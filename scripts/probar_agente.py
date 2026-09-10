@@ -29,6 +29,7 @@ import urllib.error
 import urllib.request
 
 URL = os.getenv("AGENTE_URL", "https://cv-agent-npnpuwxi2q-uc.a.run.app").rstrip("/")
+PUERTO_LOCAL = int(os.getenv("PUERTO_LOCAL", "8123"))
 
 
 def _token() -> str:
@@ -348,12 +349,69 @@ def chat() -> int:
                            "content": [{"type": "output_text", "text": texto}]})
 
 
+def _arrancar_local():
+    """Levanta el agente desde el codigo de este repo y espera a que responda.
+
+    Existe para poder probar un cambio ANTES de desplegarlo: iterar contra
+    produccion obliga a un build de varios minutos por cada ajuste de prompt.
+    Devuelve el proceso, para apagarlo al salir.
+    """
+    import atexit
+    import signal
+
+    raiz = pathlib.Path(__file__).resolve().parents[1]
+    proceso = subprocess.Popen(
+        [sys.executable, "-m", "uvicorn", "app.main:app",
+         "--host", "127.0.0.1", "--port", str(PUERTO_LOCAL), "--log-level", "warning"],
+        cwd=raiz, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+    )
+
+    def apagar():
+        if proceso.poll() is None:
+            proceso.send_signal(signal.SIGTERM if os.name != "nt" else signal.CTRL_BREAK_EVENT
+                                if False else signal.SIGTERM)
+            try:
+                proceso.wait(timeout=5)
+            except Exception:  # noqa: BLE001
+                proceso.kill()
+
+    atexit.register(apagar)
+
+    print(f"{GRIS}Levantando el agente local en el puerto {PUERTO_LOCAL}...{FIN}")
+    for _ in range(60):
+        if proceso.poll() is not None:
+            error = (proceso.stderr.read() or b"").decode("utf-8", "replace")
+            print(f"{ROJO}El agente local no arranco.{FIN}\n{error[-700:]}")
+            raise SystemExit(1)
+        try:
+            urllib.request.urlopen(f"http://127.0.0.1:{PUERTO_LOCAL}/salud", timeout=1).read()
+            print(f"{VERDE}Listo.{FIN} Estas hablando con el codigo de este repo, "
+                  f"{GRIS}no con el agente desplegado.{FIN}\n")
+            return proceso
+        except Exception:  # noqa: BLE001 - todavia no levanta
+            time.sleep(0.5)
+
+    print(f"{ROJO}El agente local no respondio a tiempo.{FIN}")
+    raise SystemExit(1)
+
+
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Prueba el agente desplegado.")
+    ap = argparse.ArgumentParser(description="Prueba el agente, desplegado o local.")
     ap.add_argument("--chat", action="store_true", help="Conversacion interactiva")
+    ap.add_argument("--local", action="store_true",
+                    help="Levanta el agente desde este repo y prueba contra el, sin desplegar")
     args = ap.parse_args()
 
-    if not TOKEN:
+    global URL, TOKEN
+    if args.local:
+        _arrancar_local()
+        URL = f"http://127.0.0.1:{PUERTO_LOCAL}"
+        # En local no hay AGENT_API_KEY configurada, asi que el endpoint va abierto.
+        TOKEN = os.getenv("AGENT_API_KEY", "")
+
+    # En local el endpoint va abierto, asi que no falta ningun token: avisarlo
+    # solo confunde.
+    if not TOKEN and not args.local:
         print(f"{ROJO}No encontre el token.{FIN} Se busca, en orden:")
         print(f"  {GRIS}1. la variable de entorno AGENTE_TOKEN")
         print(f"  2. AGENTE_TOKEN o AGENT_API_KEY en el archivo .env")
