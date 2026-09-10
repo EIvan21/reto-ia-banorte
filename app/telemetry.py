@@ -83,6 +83,8 @@ def registrar_turno(
     latencia_ms: int,
     tokens_entrada: int,
     tokens_salida: int,
+    tokens_cache_leidos: int = 0,
+    tokens_cache_escritos: int = 0,
     herramientas_usadas: list[str],
     citas: list[str],
     etiquetas_guardrail: list[str],
@@ -108,6 +110,11 @@ def registrar_turno(
         "latencia_ms": latencia_ms,
         "tokens_entrada": tokens_entrada,
         "tokens_salida": tokens_salida,
+        # Tokens servidos desde cache y tokens que costo escribirlo. La
+        # plataforma reenvia el transcript completo cada turno, asi que sin
+        # cache esa conversacion se paga entera una y otra vez.
+        "tokens_cache_leidos": tokens_cache_leidos,
+        "tokens_cache_escritos": tokens_cache_escritos,
         "herramientas_usadas": herramientas_usadas,
         "num_herramientas": len(herramientas_usadas),
         "citas": citas,
@@ -151,6 +158,8 @@ ESQUEMA_BQ = [
     {"name": "latencia_ms", "type": "INTEGER"},
     {"name": "tokens_entrada", "type": "INTEGER"},
     {"name": "tokens_salida", "type": "INTEGER"},
+    {"name": "tokens_cache_leidos", "type": "INTEGER"},
+    {"name": "tokens_cache_escritos", "type": "INTEGER"},
     {"name": "herramientas_usadas", "type": "STRING", "mode": "REPEATED"},
     {"name": "num_herramientas", "type": "INTEGER"},
     {"name": "citas", "type": "STRING", "mode": "REPEATED"},

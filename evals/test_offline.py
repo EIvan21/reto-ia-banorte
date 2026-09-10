@@ -1201,3 +1201,78 @@ def test_el_despliegue_sella_el_commit_y_nombra_la_revision():
     assert "GIT_SHA=${GIT_SHA}" in guion, "el commit no llega al contenedor"
     assert "--revision-suffix" in guion, "las revisiones no llevan el commit en el nombre"
     assert "git status --porcelain" in guion, "no avisa si se despliega un arbol sucio"
+
+
+# --- Cache del transcript ---------------------------------------------------
+# La plataforma reenvia la conversacion completa en cada turno, asi que esa es
+# la parte que crece. Cachearla es la unica optimizacion de memoria que este
+# agente puede permitirse sin tocar su garantia de no inventar: no resume nada
+# ni reescribe una frase, es el mismo contexto exacto cobrado como cache.
+
+
+def test_el_punto_de_cache_va_antes_de_la_pregunta_nueva():
+    """En el ultimo mensaje no sirve de nada: cambia en cada turno."""
+    from app.agent import _con_punto_de_cache
+
+    conv = [
+        {"role": "user", "content": "Hola"},
+        {"role": "assistant", "content": "Buenas."},
+        {"role": "user", "content": "Que sabe de Looker?"},
+        {"role": "assistant", "content": "Trabaja con Looker desde 2021."},
+        {"role": "user", "content": "Y de BigQuery?"},
+    ]
+    salida = _con_punto_de_cache(conv)
+
+    marcados = [i for i, m in enumerate(salida) if isinstance(m["content"], list)]
+    assert marcados == [len(conv) - 2], f"punto de cache en {marcados}, se esperaba en el penultimo"
+    assert salida[-1]["content"] == "Y de BigQuery?", "el ultimo mensaje no debe marcarse"
+
+
+def test_el_cache_no_altera_un_solo_caracter_del_contexto():
+    """Si esto falla, el cache dejo de ser gratis y se volvio una fuente de
+    perdida de informacion, que es justo lo que se quiere evitar."""
+    from app.agent import _con_punto_de_cache
+
+    conv = [
+        {"role": "user", "content": "Hola"},
+        {"role": "assistant", "content": "Buenas."},
+        {"role": "user", "content": "Que titulo tiene?"},
+    ]
+    salida = _con_punto_de_cache(conv)
+
+    def texto(m):
+        c = m["content"]
+        return c if isinstance(c, str) else "".join(b["text"] for b in c)
+
+    assert [texto(m) for m in salida] == [texto(m) for m in conv]
+    assert [m["role"] for m in salida] == [m["role"] for m in conv]
+
+
+def test_una_conversacion_corta_no_se_toca():
+    from app.agent import _con_punto_de_cache
+
+    corta = [{"role": "user", "content": "Hola"}]
+    assert _con_punto_de_cache(corta) == corta
+
+
+def test_no_marca_mensajes_con_bloques_de_herramienta():
+    from app.agent import _con_punto_de_cache
+
+    conv = [
+        {"role": "user", "content": "Hola"},
+        {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "buscar_cv", "input": {}}]},
+        {"role": "user", "content": "Y?"},
+    ]
+    salida = _con_punto_de_cache(conv)
+    assert salida[-2]["content"] == conv[-2]["content"], "no debe reescribir bloques de herramienta"
+
+
+def test_el_cuerpo_del_protocolo_no_lleva_campos_de_cache():
+    """usage en Open Responses declara input_tokens y output_tokens. Meter ahi
+    campos propios rompe la forma que el cliente espera."""
+    import inspect
+
+    from app import openresponses
+
+    firma = inspect.signature(openresponses.construir_respuesta)
+    assert not [p for p in firma.parameters if "cache" in p]

@@ -247,6 +247,10 @@ class ResumenTurno:
     citas: list[str] = field(default_factory=list)
     tokens_entrada: int = 0
     tokens_salida: int = 0
+    # Tokens servidos desde cache y tokens que costaron escribirlo. Sin medirlo,
+    # "activamos el cache" es una afirmacion sin evidencia.
+    tokens_cache_leidos: int = 0
+    tokens_cache_escritos: int = 0
     turnos_herramienta: int = 0
     repeticiones_evitadas: int = 0
     error: str | None = None
@@ -306,6 +310,41 @@ def _construir_kwargs(mensajes: list[dict], sistema: list[dict]) -> dict:
     return kwargs
 
 
+def _con_punto_de_cache(historial: list[dict]) -> list[dict]:
+    """Marca el final del historial estable para que el cache lo reutilice.
+
+    El prompt del sistema ya se cachea; lo que faltaba era la conversacion, que
+    es la parte que CRECE. Como la plataforma reenvia el transcript completo en
+    cada turno, sin esto la conversacion entera se paga a precio lleno una y
+    otra vez.
+
+    El punto va en el penultimo mensaje, no en el ultimo: el ultimo es la
+    pregunta nueva de este turno y cambia siempre, asi que cachearlo no sirve
+    de nada. Todo lo anterior si se repite palabra por palabra en el siguiente
+    turno, y eso es lo que el cache reutiliza.
+
+    Esto NO es resumir. No se pierde un solo hecho ni se reescribe una sola
+    frase: es el mismo contexto exacto, cobrado como lectura de cache. Por eso
+    es la unica optimizacion de memoria que este agente puede permitirse sin
+    tocar su garantia de no inventar.
+
+    Solo se marca contenido de texto. Los mensajes con bloques de herramienta se
+    dejan como estan.
+    """
+    if len(historial) < 3:
+        return historial
+
+    marcado = list(historial)
+    penultimo = dict(marcado[-2])
+    contenido = penultimo.get("content")
+    if isinstance(contenido, str) and contenido.strip():
+        penultimo["content"] = [
+            {"type": "text", "text": contenido, "cache_control": {"type": "ephemeral"}}
+        ]
+        marcado[-2] = penultimo
+    return marcado
+
+
 def responder(
     mensajes: list[dict],
     instrucciones_extra: str = "",
@@ -355,7 +394,7 @@ def responder(
             }
         )
 
-    historial = list(mensajes)
+    historial = _con_punto_de_cache(list(mensajes))
     # Firmas de las llamadas ya hechas en este turno, para no repetirlas.
     llamadas_vistas: set[str] = set()
 
@@ -380,6 +419,8 @@ def responder(
 
             resumen.tokens_entrada += mensaje.usage.input_tokens or 0
             resumen.tokens_salida += mensaje.usage.output_tokens or 0
+            resumen.tokens_cache_leidos += getattr(mensaje.usage, "cache_read_input_tokens", 0) or 0
+            resumen.tokens_cache_escritos += getattr(mensaje.usage, "cache_creation_input_tokens", 0) or 0
 
             for bloque in mensaje.content:
                 if bloque.type == "text":
