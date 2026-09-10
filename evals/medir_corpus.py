@@ -154,9 +154,10 @@ def main() -> int:
     print(f"  recall@8 semanticas  {sem:>6.0%}")
     print(f"  brecha               {lex - sem:>6.0%}")
     print()
-    print("  ADVERTENCIA sobre recall@8: con 27 entradas, devolver 8 es entregar")
-    print("  casi un tercio del CV. Un recall alto ahi mide poco -- es facil acertar")
-    print("  cuando devuelves un tercio del corpus. La senal real esta en el ranking.")
+    print(f"  ADVERTENCIA sobre recall@8: con {len(entradas)} entradas, devolver 8 es")
+    print("  entregar mas de un cuarto del CV. Un recall alto ahi mide poco: es")
+    print("  facil acertar cuando devuelves esa fraccion del corpus. La senal")
+    print("  real esta en el ranking.")
     print()
 
     mrr_lex = _rango_reciproco(LEXICAS)
