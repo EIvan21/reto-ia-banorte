@@ -204,6 +204,20 @@ fi
 echo "==> Revision:  ${SERVICIO}-${SUFIJO}"
 
 
+# La URL de Cloud Run es estable una vez creado el servicio, asi que en todo
+# despliegue que no sea el primero ya se conoce de antemano. Averiguarla aqui
+# permite mandar PUBLIC_BASE_URL en el mismo despliegue, en vez de desplegar y
+# luego actualizar: eso creaba DOS revisiones por cada despliegue y dejaba el
+# historial ilegible.
+URL="$(gcloud run services describe "$SERVICIO" \
+  --project "$PROYECTO" --region "$REGION" --format='value(status.url)' 2>/dev/null || true)"
+
+VARS_URL=""
+if [[ -n "$URL" ]]; then
+  VARS_URL=",PUBLIC_BASE_URL=${URL}"
+  echo "==> URL:       $URL (ya conocida)"
+fi
+
 echo "==> Desplegando (build remoto con Cloud Build)..."
 gcloud run deploy "$SERVICIO" \
   --source . \
@@ -220,19 +234,21 @@ gcloud run deploy "$SERVICIO" \
   --min-instances "$MIN_INSTANCIAS" \
   --max-instances "$MAX_INSTANCIAS" \
   --set-secrets "ANTHROPIC_API_KEY=${SECRETO}:latest,AGENT_API_KEY=${SECRETO_AGENTE}:latest" \
-  --set-env-vars "MODEL=claude-opus-5,EFFORT=low,BQ_PROJECT=${BQ_PROJECT:-},BQ_DATASET=${BQ_DATASET:-},REPORTES_BUCKET=${BUCKET_REPORTES},GIT_SHA=${GIT_SHA},GIT_LIMPIO=${GIT_LIMPIO}" \
+  --set-env-vars "MODEL=claude-opus-5,EFFORT=low,BQ_PROJECT=${BQ_PROJECT:-},BQ_DATASET=${BQ_DATASET:-},REPORTES_BUCKET=${BUCKET_REPORTES},GIT_SHA=${GIT_SHA},GIT_LIMPIO=${GIT_LIMPIO}${VARS_URL}" \
   --quiet
 
-URL="$(gcloud run services describe "$SERVICIO" \
-  --project "$PROYECTO" --region "$REGION" --format='value(status.url)')"
-
-# La tarjeta de agente publica esta URL y el transporte MCP valida contra ella,
-# asi que el segundo paso no es opcional: tiene que ser la URL real.
-echo
-echo "==> Fijando PUBLIC_BASE_URL=${URL}"
-gcloud run services update "$SERVICIO" \
-  --project "$PROYECTO" --region "$REGION" \
-  --update-env-vars "PUBLIC_BASE_URL=${URL}" --quiet >/dev/null
+if [[ -z "$URL" ]]; then
+  # Primer despliegue: el servicio no existia, asi que la URL nace aqui. La
+  # tarjeta de agente la publica y el transporte MCP valida contra ella, asi
+  # que este segundo paso no es opcional -- pero solo ocurre esta vez.
+  URL="$(gcloud run services describe "$SERVICIO" \
+    --project "$PROYECTO" --region "$REGION" --format='value(status.url)')"
+  echo
+  echo "==> Primer despliegue: fijando PUBLIC_BASE_URL=${URL}"
+  gcloud run services update "$SERVICIO" \
+    --project "$PROYECTO" --region "$REGION" \
+    --update-env-vars "PUBLIC_BASE_URL=${URL}" --quiet >/dev/null
+fi
 
 TOKEN="$(gcloud secrets versions access latest --secret="$SECRETO_AGENTE" --project "$PROYECTO")"
 
