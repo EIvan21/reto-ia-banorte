@@ -182,6 +182,9 @@ echo
 # existe en ningun otro lado y nadie tenia como notarlo: las revisiones de Cloud
 # Run no guardan referencia a git.
 GIT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo desconocido)"
+# Numero de parche de la version. Sube solo en cada commit, siempre hacia
+# arriba, y deja comparar dos despliegues de un vistazo.
+GIT_BUILD="$(git rev-list --count HEAD 2>/dev/null || echo 0)"
 if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
   GIT_LIMPIO="false"
   echo "AVISO: hay cambios sin commitear y se van a desplegar." >&2
@@ -190,7 +193,7 @@ if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
 else
   GIT_LIMPIO="true"
 fi
-echo "==> Version:   $GIT_SHA (arbol limpio: $GIT_LIMPIO)"
+echo "==> Version:   1.1.$GIT_BUILD  ($GIT_SHA, arbol limpio: $GIT_LIMPIO)"
 
 # El nombre de la revision lleva el commit, para que cada despliegue se pueda
 # rastrear hasta su mensaje en GitHub. Por defecto Cloud Run las llama
@@ -234,7 +237,7 @@ gcloud run deploy "$SERVICIO" \
   --min-instances "$MIN_INSTANCIAS" \
   --max-instances "$MAX_INSTANCIAS" \
   --set-secrets "ANTHROPIC_API_KEY=${SECRETO}:latest,AGENT_API_KEY=${SECRETO_AGENTE}:latest" \
-  --set-env-vars "MODEL=claude-opus-5,EFFORT=low,BQ_PROJECT=${BQ_PROJECT:-},BQ_DATASET=${BQ_DATASET:-},REPORTES_BUCKET=${BUCKET_REPORTES},GIT_SHA=${GIT_SHA},GIT_LIMPIO=${GIT_LIMPIO}${VARS_URL}" \
+  --set-env-vars "MODEL=claude-opus-5,EFFORT=low,BQ_PROJECT=${BQ_PROJECT:-},BQ_DATASET=${BQ_DATASET:-},REPORTES_BUCKET=${BUCKET_REPORTES},GIT_SHA=${GIT_SHA},GIT_BUILD=${GIT_BUILD},GIT_LIMPIO=${GIT_LIMPIO}${VARS_URL}" \
   --quiet
 
 if [[ -z "$URL" ]]; then

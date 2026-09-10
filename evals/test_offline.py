@@ -1383,28 +1383,55 @@ def test_las_politicas_de_tema_leen_el_texto_dentro_de_los_bloques(monkeypatch):
 # mirando lo de hoy o lo del primer dia.
 
 
-def test_la_version_lleva_el_commit_cuando_esta_desplegada():
+def test_la_version_sube_sola_con_cada_commit():
+    """Antes iba el hash pegado (1.1.0+08ae574): trazable, pero imposible de
+    comparar -- viendo dos hashes no se sabe cual es mas nuevo. Un contador si."""
     import importlib
 
     import app.config
 
-    original = os.environ.get("GIT_SHA")
+    original = os.environ.get("GIT_BUILD")
     try:
-        os.environ["GIT_SHA"] = "abc1234"
-        importlib.reload(app.config)
-        assert app.config.AGENT_VERSION.endswith("+abc1234"), app.config.AGENT_VERSION
+        versiones = []
+        for build in ("50", "51"):
+            os.environ["GIT_BUILD"] = build
+            importlib.reload(app.config)
+            versiones.append(app.config.AGENT_VERSION)
+        assert versiones == ["1.1.50", "1.1.51"], versiones
     finally:
         if original is None:
-            os.environ.pop("GIT_SHA", None)
+            os.environ.pop("GIT_BUILD", None)
         else:
-            os.environ["GIT_SHA"] = original
+            os.environ["GIT_BUILD"] = original
         importlib.reload(app.config)
 
 
-def test_fuera_de_un_despliegue_la_version_no_inventa_un_commit():
-    """En local vale mas una version sin commit que una con un commit falso."""
+@pytest.mark.parametrize("build", ["", "basura", "1.2", "-3"])
+def test_un_build_invalido_no_produce_una_version_rota(build):
+    """Vale mas caer a 1.1.0 que anunciar 1.1.basura."""
+    import importlib
+
+    import app.config
+
+    original = os.environ.get("GIT_BUILD")
+    try:
+        os.environ["GIT_BUILD"] = build
+        importlib.reload(app.config)
+        assert app.config.AGENT_VERSION == "1.1.0", app.config.AGENT_VERSION
+    finally:
+        if original is None:
+            os.environ.pop("GIT_BUILD", None)
+        else:
+            os.environ["GIT_BUILD"] = original
+        importlib.reload(app.config)
+
+
+def test_la_version_no_lleva_el_hash_pegado():
+    """El hash vive en /salud, que es donde lo busca quien opera. La tarjeta la
+    lee la plataforma y quiere una version, no un identificador de commit."""
     from app.config import AGENT_VERSION
 
+    assert "+" not in AGENT_VERSION, AGENT_VERSION
     assert "desconocido" not in AGENT_VERSION
 
 
