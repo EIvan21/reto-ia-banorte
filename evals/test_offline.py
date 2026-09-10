@@ -1570,43 +1570,38 @@ def test_los_modos_de_entrada_coinciden_con_lo_que_el_parser_acepta():
 
 
 def test_los_conteos_de_pruebas_en_la_documentacion_estan_al_dia():
-    """El README decia 49 pruebas y el conjunto dorado 41 casos cuando eran 214
-    y 45. Un numero viejo en un repositorio publico hace dudar de los demas."""
-    import re
+    """El README decia 49 pruebas y 41 casos dorados cuando eran 214 y 45.
 
+    Un numero viejo en la portada de un repositorio publico cuesta mas de lo que
+    parece: quien lo lee no sabe cuales otros numeros tambien estan viejos.
+
+    Se compara contra las funciones test_ declaradas como cota INFERIOR, porque
+    parametrize convierte una funcion en varios casos y el numero que anuncia el
+    README es el de casos que corren. Lo que se quiere atrapar es la deriva
+    gruesa -- anunciar 49 cuando hay 248 -- no un desfase de dos.
+    """
     import yaml
 
     raiz = Path(__file__).resolve().parents[1]
-    reales = len(re.findall(r"^def test_", Path(__file__).read_text(encoding="utf-8"), re.M))
+    funciones = len(re.findall(r"^def test_", Path(__file__).read_text(encoding="utf-8"), re.M))
+
     dorados = yaml.safe_load((raiz / "evals" / "golden.yaml").read_text(encoding="utf-8"))
     n_dorados = len(dorados["casos"] if isinstance(dorados, dict) else dorados)
 
     texto = (raiz / "README.md").read_text(encoding="utf-8")
 
-    m = re.search(r"Pruebas offline \((\d+) pruebas", texto)
-    assert m, "el README ya no anuncia el numero de pruebas"
-    # Se comparan funciones test_ declaradas, no casos expandidos por parametrize:
-    # el numero del README es el que un lector cuenta abriendo el archivo.
+    m = re.search(r"\*\*(\d+) pruebas offline\*\*", texto)
+    assert m, "el README ya no anuncia el numero de pruebas offline"
     anunciadas = int(m.group(1))
-    assert anunciadas >= reales, (
-        f"el README anuncia {anunciadas} pruebas y hay al menos {reales} funciones test_"
+    assert anunciadas >= funciones, (
+        f"el README anuncia {anunciadas} pruebas y hay {funciones} funciones test_"
     )
 
-    m = re.search(r"Conjunto dorado contra el modelo real \((\d+) casos", texto)
-    assert m, "el README ya no anuncia el numero de casos dorados"
-    assert int(m.group(1)) == n_dorados, (
-        f"el README dice {m.group(1)} casos dorados y golden.yaml tiene {n_dorados}"
+    m = re.search(r"\*\*(\d+)/(\d+) en el conjunto dorado\*\*", texto)
+    assert m, "el README ya no anuncia el resultado del conjunto dorado"
+    assert int(m.group(2)) == n_dorados, (
+        f"el README dice {m.group(2)} casos dorados y golden.yaml tiene {n_dorados}"
     )
-
-
-# --- P0-1: redaccion de PII sobre el flujo ----------------------------------
-# El guardrail de salida se aplicaba al texto FINAL. En SSE los deltas ya se
-# habian enviado sin pasar por el, asi que la segunda barrera de PII solo
-# protegia la ruta no-streaming, que es justo la que la plataforma no usa.
-#
-# El caso dificil no es redactar: es que un telefono partido entre dos deltas
-# ("55 84" + "69 8350") no coincide con el patron en ninguno de los fragmentos.
-
 
 def _deltas_emitidos(cuerpo_sse: str) -> list[str]:
     """Solo el texto que ve el usuario. El sobre del protocolo trae marcas de
@@ -1878,3 +1873,30 @@ def test_la_documentacion_no_menciona_rutas_que_no_existen():
                 )
                 continue
             assert ruta in rutas, f"{nombre} menciona {ruta}, que no existe"
+
+
+def test_los_enlaces_internos_del_readme_apuntan_a_algo_que_existe():
+    """El README quedo corto a proposito y delega la profundidad a otros
+    documentos. Si un enlace se rompe, la profundidad deja de existir para
+    quien lee y el recorte se vuelve una perdida."""
+    raiz = Path(__file__).resolve().parents[1]
+    texto = (raiz / "README.md").read_text(encoding="utf-8")
+    internos = [
+        d for _, d in re.findall(r"\[([^\]]+)\]\(([^)]+)\)", texto)
+        if not d.startswith("http")
+    ]
+    assert internos, "el README ya no enlaza a la documentacion de fondo"
+    for destino in internos:
+        assert (raiz / destino).exists(), f"enlace roto en el README: {destino}"
+
+
+def test_el_readme_cabe_en_dos_pantallas():
+    """Hacia el trabajo de tres documentos a la vez: presentar el proyecto,
+    justificar cada decision y servir de manual de operacion. Quien abre el
+    repositorio quiere saber en 30 segundos que es y verlo funcionar."""
+    raiz = Path(__file__).resolve().parents[1]
+    lineas = len((raiz / "README.md").read_text(encoding="utf-8").splitlines())
+    assert lineas <= 180, (
+        f"el README tiene {lineas} lineas; la profundidad va en DECISIONES.md "
+        "o en docs/OPERACION.md"
+    )
