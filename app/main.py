@@ -12,7 +12,7 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import time
-from typing import AsyncIterator, Iterator
+from typing import Any, AsyncIterator, Iterator
 
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
@@ -178,13 +178,64 @@ def _ultima_pregunta(mensajes: list[dict]) -> str:
     return ""
 
 
-def _id_conversacion(mensajes: list[dict]) -> str:
+# Campos de identidad del protocolo. Son opcionales: no toda plataforma los
+# manda, asi que se leen si vienen y se ignoran si no. Leerlos no cuesta nada y
+# no leerlos costaba una metrica mal agrupada.
+def _ids_de_la_plataforma(payload: dict) -> dict[str, str]:
+    """Extrae los identificadores que la plataforma nos da, si nos da alguno.
+
+    Nunca se inventan. Si la plataforma no manda identidad, aqui no hay identidad:
+    hashear el primer mensaje da agrupacion, no identidad, y confundir las dos es
+    como se acaba creyendo que se tiene memoria por usuario cuando no se tiene.
+    """
+    metadatos = payload.get("metadata")
+    if not isinstance(metadatos, dict):
+        metadatos = {}
+
+    def _texto(*candidatos: Any) -> str:
+        for c in candidatos:
+            if isinstance(c, str) and c.strip():
+                return c.strip()[:128]
+            if isinstance(c, dict):
+                for llave in ("id", "user_id", "conversation_id"):
+                    v = c.get(llave)
+                    if isinstance(v, str) and v.strip():
+                        return v.strip()[:128]
+        return ""
+
+    return {
+        "id_usuario": _texto(payload.get("user"), metadatos.get("user_id"),
+                             metadatos.get("usuario")),
+        "id_chat": _texto(payload.get("conversation"), metadatos.get("conversation_id"),
+                          metadatos.get("chat_id"), metadatos.get("thread_id")),
+        "id_respuesta_previa": _texto(payload.get("previous_response_id")),
+    }
+
+
+def _id_conversacion(mensajes: list[dict], id_chat: str = "") -> str:
     """Agrupa los turnos de una misma conversacion sin guardar estado.
 
-    Como la plataforma reenvia el transcript completo en cada turno, el primer
-    mensaje del usuario es estable durante toda la conversacion: su hash sirve
-    como identificador para la telemetria.
+    Si la plataforma manda un id de conversacion, ese manda: es identidad real.
+
+    Si no, se deriva del primer mensaje del usuario, que la plataforma reenvia
+    intacto en cada turno y por tanto es estable durante toda la conversacion.
+
+    Esa derivacion tiene una colision conocida y no se puede quitar sin romper
+    algo peor: dos personas que empiecen con "Hola" caen en el mismo grupo.
+    Probe mezclar tambien la primera respuesta del agente, que es mucho mas
+    distintiva -- y el resultado fue peor: en el turno 1 esa respuesta todavia
+    no existe, asi que el primer turno de cada conversacion se iba a un id
+    aparte y se rompia el hilo, que es justo para lo que sirve este campo. Un id
+    inestable falla siempre; la colision solo junta saludos genericos.
+
+    Por eso el campo 'identidad_de_plataforma' viaja al lado en la telemetria:
+    dice si el id es identidad de verdad o solo esta agrupacion aproximada, para
+    que al analizar no se confunda una con otra. La solucion real no esta de este
+    lado: es que la plataforma mande el id.
     """
+    if id_chat:
+        return "conv_" + hashlib.sha256(id_chat.encode("utf-8")).hexdigest()[:16]
+
     primero = next((m for m in mensajes if m["role"] == "user"), None)
     texto = _ultima_pregunta([primero]) if primero else ""
     return "conv_" + hashlib.sha256(texto.encode("utf-8")).hexdigest()[:16]
@@ -232,11 +283,15 @@ async def crear_respuesta(request: Request, authorization: str | None = Header(d
 
     instrucciones = payload.get("instructions") or ""
     streaming = bool(payload.get("stream", False))
-    id_conv = _id_conversacion(mensajes)
+    ids_plataforma = _ids_de_la_plataforma(payload)
+    id_conv = _id_conversacion(mensajes, ids_plataforma["id_chat"])
     if mensajes_omitidos:
         registrar(
             "transcript_acotado",
             id_conversacion=id_conv,
+            **ids_plataforma,
+            identidad_de_plataforma=bool(ids_plataforma["id_chat"]
+                                         or ids_plataforma["id_usuario"]),
             mensajes_omitidos=mensajes_omitidos,
             mensajes_enviados=len(mensajes),
         )
@@ -249,6 +304,9 @@ async def crear_respuesta(request: Request, authorization: str | None = Header(d
         registrar_turno(
             id_respuesta=id_respuesta,
             id_conversacion=id_conv,
+            **ids_plataforma,
+            identidad_de_plataforma=bool(ids_plataforma["id_chat"]
+                                         or ids_plataforma["id_usuario"]),
             modelo=MODEL,
             latencia_ms=int((time.perf_counter() - inicio) * 1000),
             tokens_entrada=0,
@@ -341,6 +399,8 @@ def _stream_agente(
     registrar_turno(
         id_respuesta=id_respuesta,
         id_conversacion=id_conv,
+        **ids_plataforma,
+        identidad_de_plataforma=bool(ids_plataforma["id_chat"] or ids_plataforma["id_usuario"]),
         modelo=MODEL,
         latencia_ms=int((time.perf_counter() - inicio) * 1000),
         tokens_entrada=resumen.tokens_entrada if resumen else 0,
@@ -383,6 +443,8 @@ def _responder_completo(
     registrar_turno(
         id_respuesta=id_respuesta,
         id_conversacion=id_conv,
+        **ids_plataforma,
+        identidad_de_plataforma=bool(ids_plataforma["id_chat"] or ids_plataforma["id_usuario"]),
         modelo=MODEL,
         latencia_ms=int((time.perf_counter() - inicio) * 1000),
         tokens_entrada=resumen.tokens_entrada if resumen else 0,

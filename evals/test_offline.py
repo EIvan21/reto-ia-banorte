@@ -936,3 +936,50 @@ def test_el_vocabulario_academico_sale_del_cv_y_no_de_una_lista_a_mano():
     assert {"ingenieria", "energia", "inteligencia", "artificial", "aplicada"} <= palabras
     # Nada ajeno se colo: son sus dos titulos y nada mas.
     assert len(palabras) <= 8, f"vocabulario contaminado: {sorted(palabras)}"
+
+
+# --- Identidad y agrupacion de conversaciones -------------------------------
+
+
+def test_lee_los_ids_que_manda_la_plataforma():
+    from app.main import _ids_de_la_plataforma as ids
+
+    assert ids({"user": "recruiter-42"})["id_usuario"] == "recruiter-42"
+    assert ids({"metadata": {"conversation_id": "c9"}})["id_chat"] == "c9"
+    assert ids({"conversation": {"id": "conv-abc"}})["id_chat"] == "conv-abc"
+    assert ids({"previous_response_id": "resp_1"})["id_respuesta_previa"] == "resp_1"
+
+
+@pytest.mark.parametrize("payload", [
+    {}, {"user": 12345}, {"metadata": "no soy un dict"}, {"user": ""}, {"conversation": []},
+])
+def test_no_inventa_identidad_cuando_la_plataforma_no_la_manda(payload):
+    """Hashear un mensaje da agrupacion, no identidad. Confundirlas es como se
+    acaba creyendo que hay memoria por usuario cuando no la hay."""
+    from app.main import _ids_de_la_plataforma as ids
+
+    assert all(v == "" for v in ids(payload).values()), payload
+
+
+def test_el_id_de_conversacion_es_estable_en_todos_los_turnos():
+    """Es su unico trabajo: seguir un hilo. Un id que cambia entre el turno 1 y
+    el 2 falla en el 100% de las conversaciones."""
+    from app.main import _id_conversacion
+
+    conv = [{"role": "user", "content": "Hola"}]
+    ids = [_id_conversacion(conv)]
+    for extra in ({"role": "assistant", "content": "Buenas."},
+                  {"role": "user", "content": "Que sabe de Looker?"},
+                  {"role": "assistant", "content": "Trabaja con Looker desde 2021."}):
+        conv = conv + [extra]
+        ids.append(_id_conversacion(conv))
+    assert len(set(ids)) == 1, f"el id cambio entre turnos: {ids}"
+
+
+def test_el_id_de_la_plataforma_gana_sobre_el_derivado():
+    from app.main import _id_conversacion
+
+    a = [{"role": "user", "content": "Hola"}]
+    b = [{"role": "user", "content": "Buenas tardes"}]
+    assert _id_conversacion(a) != _id_conversacion(b)
+    assert _id_conversacion(a, "chat-1") == _id_conversacion(b, "chat-1")
