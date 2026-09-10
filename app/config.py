@@ -29,6 +29,17 @@ CV_PATH = Path(os.getenv("CV_PATH", DATA_DIR / "cv.json"))
 # no en razonamiento libre. Se sube por env sin recompilar.
 MODEL = os.getenv("MODEL", "claude-opus-5")
 EFFORT = os.getenv("EFFORT", "low")
+
+# Esfuerzo que se acepta por peticion. Opus 5 quito temperature, top_p y top_k:
+# effort es EL control de profundidad que queda, asi que negarlo es negar el
+# unico parametro que el modelo todavia expone.
+#
+# Se permite hasta "high" y no mas. "xhigh" y "max" existen, pero en un chat en
+# vivo multiplican la latencia por varias veces para preguntas que se responden
+# con una busqueda en un CV de 30 entradas: el modelo se pondria a razonar sobre
+# algo que las herramientas ya resolvieron. Un limite que se puede defender vale
+# mas que una puerta abierta que nadie vigila.
+EFFORTS_PERMITIDOS = ("low", "medium", "high")
 MAX_TOKENS = int(os.getenv("MAX_TOKENS", "8000"))
 MAX_TOOL_TURNS = int(os.getenv("MAX_TOOL_TURNS", "6"))
 

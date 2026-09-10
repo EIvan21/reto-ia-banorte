@@ -18,6 +18,7 @@ import anthropic
 from . import tools
 from .config import (
     EFFORT,
+    EFFORTS_PERMITIDOS,
     ENABLE_FALLBACKS,
     ENABLE_WEB,
     FALLBACK_BETA,
@@ -292,14 +293,14 @@ def _herramientas() -> list[dict]:
     return definiciones
 
 
-def _construir_kwargs(mensajes: list[dict], sistema: list[dict]) -> dict:
+def _construir_kwargs(mensajes: list[dict], sistema: list[dict], effort: str = "") -> dict:
     kwargs: dict = {
         "model": MODEL,
         "max_tokens": MAX_TOKENS,
         "system": sistema,
         "messages": mensajes,
         "tools": _herramientas(),
-        "output_config": {"effort": EFFORT},
+        "output_config": {"effort": effort or EFFORT},
     }
     if _fallbacks_activos:
         # Si el modelo declina por politica, la API reintenta el mismo request en
@@ -345,10 +346,24 @@ def _con_punto_de_cache(historial: list[dict]) -> list[dict]:
     return marcado
 
 
+def normalizar_effort(valor) -> str:
+    """Valida el esfuerzo que pide quien llama. Devuelve "" si no es utilizable.
+
+    Nunca se pasa al modelo un valor que venga de fuera sin revisar: un effort
+    invalido tumbaria la peticion con un 400 de la API, y uno demasiado alto
+    convertiria un chat en vivo en una espera de minutos.
+    """
+    if not isinstance(valor, str):
+        return ""
+    limpio = valor.strip().lower()
+    return limpio if limpio in EFFORTS_PERMITIDOS else ""
+
+
 def responder(
     mensajes: list[dict],
     instrucciones_extra: str = "",
     guias_politica: list[str] | None = None,
+    effort: str = "",
 ) -> Iterator[Evento]:
     """Ejecuta el turno y va emitiendo ('delta', texto); termina con ('fin', ResumenTurno).
 
@@ -400,7 +415,7 @@ def responder(
 
     try:
         for turno in range(MAX_TOOL_TURNS):
-            kwargs = _construir_kwargs(historial, sistema)
+            kwargs = _construir_kwargs(historial, sistema, effort)
 
             try:
                 flujo = cliente.beta.messages.stream(**kwargs)
@@ -409,7 +424,7 @@ def responder(
                 # para todo el proceso y se reintenta sin el.
                 _fallbacks_activos = False
                 registrar("fallbacks_desactivados", motivo="sdk_sin_soporte")
-                flujo = cliente.beta.messages.stream(**_construir_kwargs(historial, sistema))
+                flujo = cliente.beta.messages.stream(**_construir_kwargs(historial, sistema, effort))
 
             with flujo as stream:
                 for evento in stream:

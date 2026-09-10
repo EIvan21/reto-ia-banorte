@@ -1067,7 +1067,7 @@ def _sin_modelo(monkeypatch, texto="Respuesta de prueba."):
     """Sustituye el agente por uno que no llama a la API."""
     from app import agent, main
 
-    def falso(mensajes, instrucciones="", guias=None):
+    def falso(mensajes, instrucciones="", guias=None, effort=""):
         resumen = agent.ResumenTurno(texto=texto, herramientas_usadas=["buscar_cv"],
                                      citas=["perfil"], tokens_entrada=10, tokens_salida=5)
         yield ("delta", texto)
@@ -1430,3 +1430,70 @@ def test_la_tarjeta_de_agente_publica_la_misma_version():
     tarjeta = cliente.get("/.well-known/agent-card.json").json()
     assert tarjeta["version"] == AGENT_VERSION
     assert tarjeta["version"] == cliente.get("/salud").json()["version"]
+
+
+# --- Esfuerzo de razonamiento por peticion ----------------------------------
+# Opus 5 quito temperature, top_p y top_k: effort es el unico control de
+# profundidad que el modelo todavia expone. Estaba fijo en una variable de
+# entorno, asi que probar el agente con mas profundidad exigia redesplegar.
+
+
+@pytest.mark.parametrize("payload,esperado", [
+    ({}, ""),
+    ({"reasoning": {"effort": "medium"}}, "medium"),
+    ({"effort": "high"}, "high"),
+    ({"reasoning": {"effort": "LOW"}}, "low"),
+    # Anidado gana sobre el suelto cuando los dos son validos.
+    ({"reasoning": {"effort": "high"}, "effort": "low"}, "high"),
+    # Anidado invalido cede al suelto valido, en vez de tirar todo.
+    ({"reasoning": {"effort": "xhigh"}, "effort": "low"}, "low"),
+])
+def test_lee_el_esfuerzo_que_pide_quien_llama(payload, esperado):
+    from app.main import _effort_pedido
+
+    assert _effort_pedido(payload) == esperado
+
+
+@pytest.mark.parametrize("valor", ["max", "xhigh", "turbo", "", None, 7, {"effort": "high"}, []])
+def test_no_pasa_al_modelo_un_esfuerzo_que_no_valido(valor):
+    """Un effort invalido tumbaria la peticion con un 400 de la API, y uno
+    demasiado alto convertiria un chat en vivo en una espera de minutos."""
+    from app.agent import normalizar_effort
+
+    assert normalizar_effort(valor) == ""
+
+
+def test_el_tope_de_esfuerzo_es_deliberado_y_esta_documentado():
+    from app.config import EFFORTS_PERMITIDOS
+
+    assert EFFORTS_PERMITIDOS == ("low", "medium", "high")
+    assert "max" not in EFFORTS_PERMITIDOS and "xhigh" not in EFFORTS_PERMITIDOS
+
+
+def test_el_esfuerzo_del_payload_llega_hasta_la_llamada_al_modelo(monkeypatch):
+    """Que se lea del payload no sirve de nada si se pierde en el camino."""
+    from app import agent, main
+
+    visto = {}
+
+    def falso(mensajes, instrucciones="", guias=None, effort=""):
+        visto["effort"] = effort
+        r = agent.ResumenTurno(texto="ok", herramientas_usadas=[], citas=["perfil"])
+        yield ("delta", "ok")
+        yield ("fin", r)
+
+    monkeypatch.setattr(main.agent, "responder", falso)
+    _cliente().post("/v1/responses", json={"input": "Hola", "reasoning": {"effort": "high"}})
+    assert visto.get("effort") == "high"
+
+
+def test_un_esfuerzo_invalido_no_rompe_la_peticion(monkeypatch):
+    """Se ignora y se usa el de la configuracion: el resto del mensaje si es
+    atendible."""
+    _sin_modelo(monkeypatch)
+    r = _cliente().post(
+        "/v1/responses",
+        json={"input": "Hola", "temperature": 0.7, "reasoning": {"effort": "ludicrous"}},
+    )
+    assert r.status_code == 200, r.text[:300]
+    assert r.json()["error"] is None

@@ -181,6 +181,31 @@ def _ultima_pregunta(mensajes: list[dict]) -> str:
 # Campos de identidad del protocolo. Son opcionales: no toda plataforma los
 # manda, asi que se leen si vienen y se ignoran si no. Leerlos no cuesta nada y
 # no leerlos costaba una metrica mal agrupada.
+def _effort_pedido(payload: dict) -> str:
+    """Esfuerzo de razonamiento que pide quien llama, si pide uno valido.
+
+    Opus 5 quito temperature, top_p y top_k, asi que effort es el unico control
+    de profundidad que el modelo todavia expone. Ignorarlo obligaba a
+    redesplegar el servicio para probar el agente con mas profundidad.
+
+    Se aceptan las dos formas en que llega segun el cliente: anidada bajo
+    'reasoning' (la que sugiere la plataforma en su campo de parametros extra)
+    y suelta en la raiz. Lo que no sea un nivel permitido se ignora en silencio
+    y se usa el de la configuracion: un valor invalido tumbaria la peticion con
+    un 400 de la API, y el resto del mensaje si es atendible.
+    """
+    razonamiento = payload.get("reasoning")
+    candidatos = [payload.get("effort")]
+    if isinstance(razonamiento, dict):
+        candidatos.insert(0, razonamiento.get("effort"))
+
+    for c in candidatos:
+        valido = agent.normalizar_effort(c)
+        if valido:
+            return valido
+    return ""
+
+
 def _ids_de_la_plataforma(payload: dict) -> dict[str, str]:
     """Extrae los identificadores que la plataforma nos da, si nos da alguno.
 
@@ -284,6 +309,7 @@ async def crear_respuesta(request: Request, authorization: str | None = Header(d
     instrucciones = payload.get("instructions") or ""
     streaming = bool(payload.get("stream", False))
     ids_plataforma = _ids_de_la_plataforma(payload)
+    effort = _effort_pedido(payload)
     id_conv = _id_conversacion(mensajes, ids_plataforma["id_chat"])
     if mensajes_omitidos:
         registrar(
@@ -351,14 +377,14 @@ async def crear_respuesta(request: Request, authorization: str | None = Header(d
     if streaming:
         return StreamingResponse(
             _stream_agente(id_respuesta, id_mensaje, mensajes, instrucciones, id_conv, inicio,
-                           guias, etiquetas_politica, ids_plataforma),
+                           guias, etiquetas_politica, ids_plataforma, effort),
             media_type="text/event-stream",
             headers=CABECERAS_SSE,
         )
 
     return JSONResponse(
         content=_responder_completo(id_respuesta, id_mensaje, mensajes, instrucciones, id_conv,
-                                    inicio, guias, etiquetas_politica, ids_plataforma)
+                                    inicio, guias, etiquetas_politica, ids_plataforma, effort)
     )
 
 
@@ -385,6 +411,7 @@ def _stream_agente(
     guias: list[str] | None = None,
     etiquetas_politica: list[str] | None = None,
     ids_plataforma: dict[str, str] | None = None,
+    effort: str = "",
 ) -> Iterator[str]:
     ids_plataforma = ids_plataforma or _IDS_VACIOS
     emisor = openresponses.EmisorSSE(id_respuesta, id_mensaje, MODEL)
@@ -392,7 +419,7 @@ def _stream_agente(
 
     resumen = None
     try:
-        for tipo, carga in agent.responder(mensajes, instrucciones, guias):
+        for tipo, carga in agent.responder(mensajes, instrucciones, guias, effort):
             if tipo == "delta":
                 yield emisor.delta(str(carga))
             else:
@@ -447,10 +474,11 @@ def _responder_completo(
     guias: list[str] | None = None,
     etiquetas_politica: list[str] | None = None,
     ids_plataforma: dict[str, str] | None = None,
+    effort: str = "",
 ) -> dict:
     ids_plataforma = ids_plataforma or _IDS_VACIOS
     resumen = None
-    for tipo, carga in agent.responder(mensajes, instrucciones, guias):
+    for tipo, carga in agent.responder(mensajes, instrucciones, guias, effort):
         if tipo == "fin":
             resumen = carga
 
