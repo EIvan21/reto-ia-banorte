@@ -22,6 +22,7 @@ from .config import (
     AGENT_API_KEY,
     AGENT_NAME,
     AGENT_VERSION,
+    MAX_TRANSCRIPT_CHARS,
     MAX_TURNS_IN_TRANSCRIPT,
     MODEL,
     PUBLIC_BASE_URL,
@@ -38,6 +39,58 @@ try:
 except Exception as exc:  # noqa: BLE001
     APP_MCP = None
     _MOTIVO_SIN_MCP = str(exc)
+
+
+# --- Ventana de conversacion ------------------------------------------------
+
+AVISO_DE_CORTE = (
+    "[Nota del sistema: esta conversacion es larga y se omitieron {n} mensajes "
+    "intermedios. NO supongas que un dato ya se reviso antes. Si te preguntan "
+    "algo concreto del CV, vuelve a consultarlo con las herramientas aunque "
+    "sientas que ya lo respondiste.]"
+)
+
+
+def acotar_transcript(mensajes: list[dict]) -> tuple[list[dict], int]:
+    """Recorta un transcript largo y DEJA CONSTANCIA del recorte.
+
+    El servidor es sin estado: la plataforma reenvia la conversacion entera cada
+    turno, asi que recortar aqui es lo unico que decide que recuerda el agente.
+
+    Lo que se conserva: los 2 primeros mensajes (anclan de que va la charla) y
+    la cola mas reciente (lleva el hilo). Lo que cambia respecto a la version
+    anterior es que el corte deja de ser invisible. Antes se empalmaban el
+    principio y el final sin marca alguna, y el modelo recibia una conversacion
+    aparentemente continua con un hueco adentro. Esa es exactamente la situacion
+    en la que un modelo responde de memoria -- "esto ya lo dijimos" -- en vez de
+    volver a consultar el CV, y de ahi salen los datos inventados.
+
+    Ahora se inserta un aviso explicito en el lugar del hueco, y ademas se anota
+    en la telemetria para que el corte sea visible al operar, no solo al fallar.
+    """
+    total = len(mensajes)
+    cabeza = 2
+
+    if total > MAX_TURNS_IN_TRANSCRIPT:
+        cola = MAX_TURNS_IN_TRANSCRIPT - cabeza
+    else:
+        cola = total - cabeza
+
+    # Presupuesto de caracteres: manda sobre el conteo de mensajes, porque unos
+    # pocos mensajes enormes (alguien pegando una vacante completa) pesan mas
+    # que muchos cortos.
+    while cola > 2:
+        recorte = mensajes[:cabeza] + mensajes[-cola:] if cola < total else mensajes
+        if sum(len(m.get("content") or "") for m in recorte) <= MAX_TRANSCRIPT_CHARS:
+            break
+        cola -= 2
+
+    if cola >= total - cabeza:
+        return mensajes, 0
+
+    omitidos = total - cabeza - cola
+    aviso = {"role": "user", "content": AVISO_DE_CORTE.format(n=omitidos)}
+    return mensajes[:cabeza] + [aviso] + mensajes[-cola:], omitidos
 
 
 @contextlib.asynccontextmanager
@@ -175,14 +228,18 @@ async def crear_respuesta(request: Request, authorization: str | None = Header(d
             ),
         )
 
-    # Acota transcripts muy largos conservando el inicio (que ancla el tema) y la
-    # cola reciente (que lleva el hilo de la conversacion).
-    if len(mensajes) > MAX_TURNS_IN_TRANSCRIPT:
-        mensajes = mensajes[:2] + mensajes[-(MAX_TURNS_IN_TRANSCRIPT - 2):]
+    mensajes, mensajes_omitidos = acotar_transcript(mensajes)
 
     instrucciones = payload.get("instructions") or ""
     streaming = bool(payload.get("stream", False))
     id_conv = _id_conversacion(mensajes)
+    if mensajes_omitidos:
+        registrar(
+            "transcript_acotado",
+            id_conversacion=id_conv,
+            mensajes_omitidos=mensajes_omitidos,
+            mensajes_enviados=len(mensajes),
+        )
     ultimo_usuario = next((m["content"] for m in reversed(mensajes) if m["role"] == "user"), "")
 
     # --- Guardrail de entrada: puede cortar antes de gastar una llamada al modelo

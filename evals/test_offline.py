@@ -821,3 +821,64 @@ def test_hay_una_sugerencia_que_demuestra_honestidad():
         "ninguna sugerencia menciona algo ausente del CV; se pierde la oportunidad "
         "de demostrar que el agente no inventa"
     )
+
+
+# --- Ventana de conversacion ------------------------------------------------
+# El servidor no guarda estado: la plataforma reenvia el transcript completo en
+# cada turno, asi que el recorte de aqui es TODO el manejo de memoria que hay.
+# Estas pruebas existen porque el tope original (40 mensajes) tiraba la mitad de
+# una conversacion real de 36 turnos sin dejar rastro.
+
+
+def _conversacion(n: int, largo: int = 50) -> list[dict]:
+    return [
+        {"role": "user" if i % 2 == 0 else "assistant", "content": f"m{i} " + "x" * largo}
+        for i in range(n)
+    ]
+
+
+def test_una_conversacion_larga_de_verdad_no_se_recorta():
+    """36 turnos son 72 mensajes. Es una entrevista larga, no un caso extremo."""
+    from app.main import acotar_transcript
+
+    salida, omitidos = acotar_transcript(_conversacion(72))
+    assert omitidos == 0, "una charla de 36 turnos no deberia perder nada"
+    assert len(salida) == 72
+
+
+def test_el_recorte_deja_aviso_en_lugar_de_ser_invisible():
+    """Un hueco silencioso es peor que un transcript corto: el modelo recibe una
+    conversacion aparentemente continua y contesta de memoria en vez de volver a
+    consultar el CV."""
+    from app.main import acotar_transcript
+
+    salida, omitidos = acotar_transcript(_conversacion(600))
+    assert omitidos > 0
+    avisos = [m for m in salida if m["content"].startswith("[Nota del sistema")]
+    assert len(avisos) == 1, "debe haber exactamente un aviso, en el lugar del hueco"
+    assert str(omitidos) in avisos[0]["content"]
+    assert "herramientas" in avisos[0]["content"], (
+        "el aviso debe pedir explicitamente volver a consultar, no solo avisar del corte"
+    )
+
+
+def test_el_recorte_conserva_el_inicio_y_el_final():
+    from app.main import acotar_transcript
+
+    original = _conversacion(600)
+    salida, _ = acotar_transcript(original)
+    assert salida[:2] == original[:2], "el inicio ancla el tema"
+    assert salida[-1] == original[-1], "el ultimo mensaje es el que hay que responder"
+
+
+def test_el_presupuesto_de_caracteres_manda_sobre_el_conteo():
+    """Pocos mensajes enormes (alguien pegando una vacante completa) pesan mas
+    que muchos cortos, asi que contar mensajes no basta."""
+    from app.config import MAX_TRANSCRIPT_CHARS
+    from app.main import acotar_transcript
+
+    gordos = [{"role": "user", "content": "y" * 20_000} for _ in range(20)]
+    salida, omitidos = acotar_transcript(gordos)
+    assert omitidos > 0, "20 mensajes caben por conteo pero no por tamano"
+    total = sum(len(m["content"]) for m in salida)
+    assert total <= MAX_TRANSCRIPT_CHARS + 500, f"{total} caracteres supera el presupuesto"

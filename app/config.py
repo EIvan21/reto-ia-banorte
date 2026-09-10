@@ -61,7 +61,19 @@ AGENT_API_KEY = os.getenv("AGENT_API_KEY", "").strip()
 
 # Limite de tamano de entrada, para acotar costo y superficie de abuso.
 MAX_INPUT_CHARS = int(os.getenv("MAX_INPUT_CHARS", "8000"))
-MAX_TURNS_IN_TRANSCRIPT = int(os.getenv("MAX_TURNS_IN_TRANSCRIPT", "40"))
+
+# Ventana de conversacion. El servidor no guarda estado: la plataforma reenvia el
+# transcript completo en cada turno, asi que ESTE es el unico control de memoria
+# que existe. El tope estaba en 40 mensajes, y estaba mal calibrado: una charla
+# real de 36 turnos son 72 mensajes, o sea que se tiraba la mitad de en medio
+# EN SILENCIO. El modelo recibia una conversacion que parecia continua y no lo
+# era, que es justo la condicion en la que un modelo contesta de memoria en vez
+# de volver a consultar el CV.
+# El presupuesto de caracteres es el limite que de verdad importa: 40 mensajes
+# largos pesan mucho mas que 200 cortos. Con ~13k tokens de CV y una ventana de
+# 1M, 240 mensajes / 120k caracteres siguen siendo holgados.
+MAX_TURNS_IN_TRANSCRIPT = int(os.getenv("MAX_TURNS_IN_TRANSCRIPT", "240"))
+MAX_TRANSCRIPT_CHARS = int(os.getenv("MAX_TRANSCRIPT_CHARS", "120000"))
 
 # --- Telemetria -------------------------------------------------------------
 # Sink en BigQuery. Si no hay dataset configurado, la telemetria solo va a
