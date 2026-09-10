@@ -119,11 +119,17 @@ _PATRONES_PII: list[tuple[re.Pattern[str], str]] = [
 _LISTA_BLANCA = re.compile(r"\b(19|20)\d{2}\b")
 
 
-def redactar_pii(texto: str) -> tuple[str, list[str]]:
-    """Redacta datos personales que no deben salir. Devuelve (texto, etiquetas)."""
-    etiquetas: list[str] = []
-    resultado = texto
+# Las URLs se dejan intactas. Una URL firmada de Cloud Storage lleva el numero
+# del proyecto, una fecha y una expiracion en segundos, y el patron de telefono
+# se comia el numero de la cuenta de servicio: el enlace del reporte salia
+# "firmado" con "[telefono no publico]" adentro y no abria. Redactar dentro de
+# una URL que nosotros mismos generamos rompe el enlace siempre y no protege
+# nada, porque ahi no hay datos de nadie.
+_URL = re.compile(r"https?://\S+")
 
+
+def _redactar_fragmento(texto: str, etiquetas: list[str]) -> str:
+    resultado = texto
     for patron, reemplazo in _PATRONES_PII:
         def _sustituir(m: re.Match[str]) -> str:
             if _LISTA_BLANCA.fullmatch(m.group(0).strip()):
@@ -132,8 +138,25 @@ def redactar_pii(texto: str) -> tuple[str, list[str]]:
             return reemplazo
 
         resultado = patron.sub(_sustituir, resultado)
+    return resultado
 
-    return resultado, etiquetas
+
+def redactar_pii(texto: str) -> tuple[str, list[str]]:
+    """Redacta datos personales que no deben salir. Devuelve (texto, etiquetas).
+
+    Se redacta el texto normal y se dejan intactas las URLs.
+    """
+    etiquetas: list[str] = []
+    piezas: list[str] = []
+    fin_anterior = 0
+
+    for m in _URL.finditer(texto or ""):
+        piezas.append(_redactar_fragmento(texto[fin_anterior:m.start()], etiquetas))
+        piezas.append(m.group(0))
+        fin_anterior = m.end()
+
+    piezas.append(_redactar_fragmento((texto or "")[fin_anterior:], etiquetas))
+    return "".join(piezas), etiquetas
 
 
 # Senales de que la respuesta afirma hechos concretos del CV.

@@ -1138,3 +1138,37 @@ def test_la_tarjeta_de_agente_se_sirve():
     r = _cliente().get("/.well-known/agent-card.json")
     assert r.status_code == 200
     assert r.json().get("name")
+
+
+# --- El redactor de PII no debe romper enlaces ------------------------------
+# El reporte descargable salio a produccion con la firma rota: el patron de
+# telefono se comio el numero de la cuenta de servicio dentro de la URL firmada
+# y la sustituyo por "[telefono no publico]". El enlace no abria.
+
+_URL_FIRMADA = (
+    "https://storage.googleapis.com/cv-agent-edher-reportes/reportes/2026/09/abc.html"
+    "?X-Goog-Credential=921445877595-compute%40developer.gserviceaccount.com"
+    "%2F20260910%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Expires=604800"
+    "&X-Goog-Signature=757a05bf032eb54aab94f18c718c225b8b47f9fd"
+)
+
+
+def test_una_url_firmada_sobrevive_al_redactor():
+    salida, _ = guardrails.redactar_pii(f"Aqui va: [Reporte]({_URL_FIRMADA})")
+    assert _URL_FIRMADA in salida, "el redactor rompio la URL firmada"
+
+
+def test_el_telefono_se_sigue_redactando_junto_a_una_url():
+    """Dejar las URLs intactas no puede abrir una puerta al lado."""
+    salida, etiquetas = guardrails.redactar_pii(
+        f"Llama al {_TELEFONO_FICTICIO} o abre {_URL_FIRMADA}"
+    )
+    assert "pii_redactada" in etiquetas
+    assert not _PATRON_TELEFONO.search(salida.replace(_URL_FIRMADA, ""))
+    assert _URL_FIRMADA in salida
+
+
+def test_el_redactor_no_toca_anios():
+    salida, etiquetas = guardrails.redactar_pii("Trabajo ahi de 2021 a 2024.")
+    assert salida == "Trabajo ahi de 2021 a 2024."
+    assert not etiquetas
