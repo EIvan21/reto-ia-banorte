@@ -112,6 +112,17 @@ _GRUPOS_SINONIMOS: list[set[str]] = [
      "simulacion", "compresor", "publicado"},
     {"idioma", "idiomas", "ingles", "japones", "espanol", "language", "languages"},
     {"curso", "cursos", "diplomado", "platzi", "autodidacta", "formacion"},
+    # Sin este grupo, "frontend" no alcanzaba la evidencia de frontend: el CV la
+    # nombra por tecnologia (Angular, TypeScript, Go templates) y nunca por la
+    # categoria con la que la gente pregunta.
+    {"frontend", "front end", "backend", "back end", "fullstack", "full stack",
+     "web", "desarrollo web", "interfaz", "interfaces", "sitio", "pagina",
+     "angular", "javascript", "typescript", "css", "html", "jinja", "go",
+     "golang", "go templates", "plantillas", "templates", "api", "apis", "rest"},
+    {"viaje", "viajes", "viajar", "viajado", "destino", "destinos", "vacaciones",
+     "turismo", "oaxaca", "guatemala", "puerto escondido", "tikal", "antigua",
+     "volcan", "semana santa", "tradicion", "tradiciones"},
+    {"salsa", "baile", "bailar", "bailas", "baila", "danza"},
 ]
 
 
@@ -143,9 +154,18 @@ def _tokenizar(texto: str) -> list[str]:
     return [t for t in _SEPARADOR.split(_normalizar(texto)) if t]
 
 
+# Excepciones al filtro de longitud: nombres reales de tecnologias de dos letras.
+# El filtro "len > 2" descarta fragmentos ruidosos, pero tambien descartaba "Go",
+# y una pregunta legitima -- "sabes Go?" -- devolvia cero resultados.
+_CORTAS_VALIDAS = {"go", "ia", "ai", "bi", "ml", "js", "ts", "ui", "ux", "qa"}
+
+
 def _terminos_de_consulta(consulta: str) -> set[str]:
     """Tokens utiles de la consulta: sin palabras vacias y sin fragmentos cortos."""
-    return {t for t in _tokenizar(consulta) if len(t) > 2 and t not in _VACIAS}
+    return {
+        t for t in _tokenizar(consulta)
+        if (len(t) > 2 or t in _CORTAS_VALIDAS) and t not in _VACIAS
+    }
 
 
 # Llaves que solo dan estructura y no significado. Todas las demas SI se indexan.

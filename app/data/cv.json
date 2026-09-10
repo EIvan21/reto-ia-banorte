@@ -8,8 +8,8 @@
   "perfil": {
     "id": "perfil",
     "nombre": "Edher Ivan Diaz Salazar",
-    "titular": "Analytics Engineer",
-    "especialidad": "Looker, LookML, BigQuery y Google Cloud",
+    "titular": "Analytics Engineer e ingeniero de agentes de IA",
+    "especialidad": "Agentes LLM y MCP sobre Google Cloud, con base en Looker, LookML y BigQuery",
     "ubicacion": "Ciudad de Mexico, Mexico",
     "anios_experiencia": 5,
     "disponibilidad_remoto": true,
@@ -20,14 +20,15 @@
       },
       {
         "idioma": "Ingles",
-        "nivel": "Profesional"
+        "nivel": "Profesional pleno",
+        "contexto": "Es su idioma de trabajo diario, no una linea del CV. En GlobalLogic coordina con equipos de Estados Unidos, Europa y Corea, y toda la comunicacion tecnica es en ingles."
       },
       {
         "idioma": "Japones",
-        "nivel": "Basico"
+        "nivel": "Basico, en aprendizaje activo"
       }
     ],
-    "resumen": "Analytics Engineer con 5 anios disenando soluciones de Looker y BigQuery sobre Google Cloud. Certificado Google Cloud Associate Cloud Engineer y autor principal de skills de agentes de IA y bloques de Looker publicados en la organizacion looker-open-source de Google. Redujo 30% el tiempo de desarrollo de LookML automatizando la generacion de codigo con agentes LLM, y bajo 30% el sobreinventario de un cliente con un modelo de pronostico. Especializado en modelado semantico con LookML, pipelines de datos y generacion de datos sinteticos."
+    "resumen": "Ingeniero con 5 anios sobre Google Cloud que hoy construye, despliega y monitorea agentes de modelos de lenguaje. En GlobalLogic desarrolla integraciones de agentes LLM y frameworks de prompts (Gemini, Claude Code, Codex, Cursor) que generan y refactorizan LookML automaticamente, y es autor principal de tres piezas de agentes de IA publicadas en la organizacion looker-open-source de Google, incluido el bloque con el que otros equipos monitorean sus propios agentes GenAI. Esa capa de IA se apoya en una base solida de ingenieria: desarrollo web full stack, modelado semantico con LookML, pipelines de datos y despliegue en contenedores. Certificado Associate Cloud Engineer y Generative AI Leader por Google Cloud, y cursando la Maestria en Inteligencia Artificial Aplicada en el Tec de Monterrey."
   },
   "contacto": {
     "id": "contacto",
@@ -39,6 +40,24 @@
     "tiktok": "https://tiktok.com/@eivan7678"
   },
   "habilidades": [
+    {
+      "id": "hab-web",
+      "categoria": "Desarrollo Web y Backend",
+      "items": [
+        "Angular",
+        "JavaScript",
+        "TypeScript",
+        "HTML",
+        "CSS",
+        "Go (con Go templates)",
+        "Python (FastAPI, Flask)",
+        "Jinja templates",
+        "APIs REST",
+        "Docker",
+        "Git"
+      ],
+      "contexto": "Base practica anterior a su trabajo con agentes, y de donde viene su soltura para llevar cosas a produccion. Trabajo en la migracion de una pagina de producto de Google que corria en Python con plantillas Jinja y se llevo a Go con Go templates (el sitio de Looker Studio, antes Data Studio). Su sitio personal edherivan.com esta hecho en Angular. Las aplicaciones que ha construido para Looker usan JavaScript, TypeScript y CSS. El agente de CV de este mismo portafolio es un servicio Python/FastAPI en contenedor desplegado en Cloud Run."
+    },
     {
       "id": "hab-bi",
       "categoria": "BI y Analitica",
@@ -80,15 +99,21 @@
     },
     {
       "id": "hab-ia",
-      "categoria": "IA y Herramientas",
+      "categoria": "IA y Sistemas Agenticos",
       "items": [
         "Agentes LLM (Gemini, Claude Code, Codex, Cursor)",
+        "MCP (Model Context Protocol): construccion de servidores y herramientas",
+        "Diseno de skills y flujos entre agentes",
         "Ingenieria de prompts",
-        "Git",
+        "Guardrails de entrada y salida",
+        "Evaluacion automatizada de agentes",
+        "Observabilidad de agentes GenAI",
+        "Modelos de generacion de video (Veo, Sora, Seedance) via fal.ai",
+        "FastAPI",
         "Jupyter",
-        "FastAPI"
+        "Git"
       ],
-      "contexto": "Nucleo del trabajo actual en GlobalLogic: construccion de integraciones de agentes LLM y frameworks de prompts que generan y refactorizan LookML automaticamente. Tambien es la base de las dos skills de agentes publicadas en looker-open-source."
+      "contexto": "Es el nucleo de su trabajo actual y la direccion que quiere de tiempo completo. En GlobalLogic construye integraciones de agentes LLM y frameworks de prompts que generan y refactorizan LookML. Fuera del empleo ha construido tres sistemas agenticos completos: dos skills de agente publicadas en looker-open-source de Google, un sistema multiagente de generacion de video con roles especializados y revision automatica, y el agente conversacional de este CV, con servidor MCP, guardrails, suite de evaluacion y telemetria propia."
     }
   ],
   "experiencia": [
@@ -311,6 +336,37 @@
         "Python"
       ],
       "estado": "Proyecto personal en curso. Los videos se publican en su canal de TikTok, @eivan7678, que por ahora tiene poco alcance: es un espacio de experimentacion con modelos generativos, no un proyecto de audiencia."
+    },
+    {
+      "id": "proy-migracion-go",
+      "nombre": "Migracion del sitio de Looker Studio a Go",
+      "rol": "Desarrollador",
+      "organizacion": "Google (via GlobalLogic)",
+      "tipo": "Desarrollo web",
+      "publico": true,
+      "descripcion": "El sitio de producto de Looker Studio (antes Data Studio) corria en Python con plantillas Jinja. Edher participo en rehacerlo y migrarlo a Go con Go templates.",
+      "por_que_importa": "Es la evidencia concreta de que su base no es solo de datos: desarrollo web de punta a punta sobre un producto publico de Google, y una migracion de lenguaje y de motor de plantillas. De ahi viene su soltura para empaquetar y desplegar servicios en produccion.",
+      "tecnologias": [
+        "Go",
+        "Go templates",
+        "Python",
+        "Jinja",
+        "Desarrollo web"
+      ]
+    },
+    {
+      "id": "proy-sitio-personal",
+      "nombre": "edherivan.com",
+      "rol": "Autor",
+      "organizacion": "Proyecto personal",
+      "tipo": "Sitio web",
+      "publico": true,
+      "descripcion": "Su sitio personal, construido en Angular.",
+      "tecnologias": [
+        "Angular",
+        "TypeScript",
+        "CSS"
+      ]
     }
   ],
   "open_source": {
@@ -413,6 +469,10 @@
       {
         "nombre": "Gimnasio",
         "detalle": "Le entro en serio este ano. Va al menos tres veces por semana, con una rutina que programo apoyandose en IA."
+      },
+      {
+        "nombre": "Salsa",
+        "detalle": "Toma clases desde hace aproximadamente un ano y le gusta de verdad. Sale a bailar en Ciudad de Mexico, con Mama Rumba entre sus lugares habituales."
       }
     ],
     "tecnicos": [
@@ -422,7 +482,24 @@
         "_revisar": "Edher: confirma la lista de modelos de video. Entendi Veo y Sora, y un tercero que no alcance a distinguir en el audio (¿Seedance? ¿Kling?).",
         "por_que_lo_hace": "Le sirve para mantenerse al dia con los modelos generativos por fuera del trabajo, y conecta con algo que le gustaria hacer mas: explicar y divulgar lo que va saliendo en IA."
       }
-    ]
+    ],
+    "viajes": {
+      "resumen": "Viaja buscando tradicion, color y naturaleza, mas que destinos de postal. Sus lugares favoritos son Oaxaca y Puerto Escondido.",
+      "destinos": [
+        {
+          "lugar": "Oaxaca",
+          "detalle": "Uno de sus destinos favoritos. Le atrae por lo colorida y calida que es la ciudad y por el peso que sigue teniendo la tradicion en la vida diaria."
+        },
+        {
+          "lugar": "Puerto Escondido",
+          "detalle": "Su otro destino favorito, en la costa de Oaxaca."
+        },
+        {
+          "lugar": "Guatemala",
+          "detalle": "Fue en abril de 2026, en Semana Santa, y le sorprendio como se vive alli esa tradicion. Recorrio Antigua y sus calles empedradas, vio el Volcan de Fuego, y visito Tikal, las ruinas mayas, que le parecieron lo mas impresionante del viaje."
+        }
+      ]
+    }
   },
   "trayectoria": {
     "id": "trayectoria",
@@ -444,10 +521,14 @@
     "lo_que_le_reconocen": "Integracion de equipo y comunicacion. Tiene inclinacion natural al liderazgo: jala al equipo a probar cosas distintas, propone reunirse a compartir ideas y hacer lluvia de ideas para ver que se puede mejorar. Con criterio, eso si: solo cuando aporta, porque tambien entiende que la gente tiene su trabajo y sus tiempos. Le importa mantener buena relacion con sus companeros y que el equipo se mantenga unido.",
     "lo_que_le_cuesta": "Arrancar en solitario. Cuando el tema es nuevo, nadie del equipo lo domina y le toca empezar de cero, la parte dificil no es investigar sino decidir POR DONDE empezar a investigar. Se le junta con que no se conforma con lo primero que lee: necesita que le quede claro todo, y ese proceso es pesado. Sabe de antemano que va a quedar absorbido en el tema un buen rato, y esa certeza es justo lo que hace cuesta arriba el primer paso. Una vez adentro, el problema es el contrario: le cuesta soltarlo.",
     "que_equipo_le_saca_lo_mejor": "Equipos y jefes que permiten colaborar y proponer sin limitar. Donde se pueda preguntar sin que te hagan sentir mal, tonto, o que la pregunta no tenia sentido. Su criterio es simple: donde te escuchan y te sientes valorado es donde das lo mejor. Es coherente con como el lidera -- en Infosys, como SME, su forma de subir al equipo fue que los agentes con mejores resultados compartieran sus tacticas con los demas.",
-    "uso_de_ia_en_su_proceso": "Usa IA como una fuente mas dentro de su proceso de investigacion, segun el caso, no como sustituto de entender el problema. Es consistente con su trabajo: construye agentes LLM, asi que conoce de primera mano donde ayudan y donde no hay que creerles."
+    "uso_de_ia_en_su_proceso": "Usa IA como una fuente mas dentro de su proceso de investigacion, segun el caso, no como sustituto de entender el problema. Es consistente con su trabajo: construye agentes LLM, asi que conoce de primera mano donde ayudan y donde no hay que creerles.",
+    "aprendizaje_continuo": "Es el hilo mas constante de su trayectoria. Aprendio a programar por su cuenta al final de una carrera de ingenieria en energia, salto a datos con Python de forma autodidacta, se certifico en Google Cloud dos veces, y hoy cursa una maestria en IA aplicada mientras construye sistemas agenticos por su cuenta fuera del trabajo. Cuando una tecnologia no esta en su historial, el patron dice que la aprende rapido: es lo que ha hecho en cada etapa.",
+    "que_ofrece": "Llega con ganas de construir, no de mantener. Le interesan los equipos donde pueda proponer y donde lo que construye llegue a produccion, y trae la combinacion poco comun de saber modelar datos en serio y saber llevar un agente a produccion con evaluacion y observabilidad."
   },
   "_por_confirmar": [
-    "Magia: el angulo de ligue del truco se omitio a proposito. Si lo quieres dentro, dilo."
+    "Magia: el angulo de ligue del truco se omitio a proposito. Si lo quieres dentro, dilo.",
+    "Migracion de Looker Studio: confirmar si fue trabajo de equipo o individual, y en que anio.",
+    "edherivan.com: version de Angular, si aplica."
   ],
   "publicaciones": {
     "id": "publicaciones",
