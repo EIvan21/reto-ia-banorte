@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import hmac
 import time
 from typing import Any, AsyncIterator, Iterator
 
@@ -25,13 +26,14 @@ from .config import (
     CLOUD_RUN_REVISION,
     GIT_LIMPIO,
     GIT_SHA,
+    MAX_BODY_BYTES,
     MAX_TRANSCRIPT_CHARS,
     MAX_TURNS_IN_TRANSCRIPT,
     MODEL,
     PUBLIC_BASE_URL,
     load_cv,
 )
-from .telemetry import registrar, registrar_error, registrar_turno
+from .telemetry import registrar, registrar_error, registrar_turno, vaciar
 
 # El servidor MCP es opcional: si el paquete no esta instalado, el agente sigue
 # funcionando con el endpoint de Open Responses y solo se anota en el log.
@@ -107,12 +109,21 @@ async def ciclo_de_vida(_: FastAPI) -> AsyncIterator[None]:
     """
     if APP_MCP is None:
         registrar("mcp_deshabilitado", motivo=_MOTIVO_SIN_MCP)
-        yield
+        try:
+            yield
+        finally:
+            vaciar()
         return
 
     async with APP_MCP.router.lifespan_context(APP_MCP):
         registrar("mcp_habilitado", ruta="/mcp")
-        yield
+        try:
+            yield
+        finally:
+            # Cloud Run manda SIGTERM y el proceso se va. Sin esto quedan filas
+            # de telemetria a medio camino, y no se pierden al azar: se pierde
+            # justo la del final -- despliegues, picos, reinicios por error.
+            vaciar()
 
 
 app = FastAPI(
@@ -166,7 +177,10 @@ def _autorizado(cabecera: str | None) -> bool:
         return False
     esperado = f"Bearer {AGENT_API_KEY}"
     # Comparacion en tiempo constante para no filtrar la clave por temporizacion.
-    return hashlib.sha256(cabecera.encode()).digest() == hashlib.sha256(esperado.encode()).digest()
+    # Comparar dos digests del mismo largo ya era constante en la practica, pero
+    # compare_digest es la primitiva que existe para esto: no depende de que el
+    # de al lado razone sobre por que el == de bytes no delata nada aqui.
+    return hmac.compare_digest(cabecera.encode(), esperado.encode())
 
 
 def _ultima_pregunta(mensajes: list[dict]) -> str:
@@ -282,6 +296,22 @@ async def crear_respuesta(request: Request, authorization: str | None = Header(d
             status_code=401,
             content=openresponses.construir_error(
                 id_respuesta, MODEL, "Falta o es invalido el token de portador.", "unauthorized"
+            ),
+        )
+
+    # El transcript ya se acota a MAX_TRANSCRIPT_CHARS, asi que lo que se manda
+    # al modelo estaba acotado. Lo que no lo estaba era el cuerpo CRUDO: una
+    # peticion enorme se parseaba entera a memoria antes de que nadie la mirara.
+    # Se corta por Content-Length, que es gratis y llega antes que el parseo.
+    declarado = request.headers.get("content-length")
+    if declarado and declarado.isdigit() and int(declarado) > MAX_BODY_BYTES:
+        registrar("cuerpo_demasiado_grande", bytes=int(declarado))
+        return JSONResponse(
+            status_code=413,
+            content=openresponses.construir_error(
+                id_respuesta, MODEL,
+                f"El cuerpo supera el limite de {MAX_BODY_BYTES} bytes.",
+                "invalid_request",
             ),
         )
 
@@ -418,21 +448,42 @@ def _stream_agente(
     yield from emisor.inicio()
 
     resumen = None
+    # La redaccion de PII tiene que ocurrir ANTES de emitir cada delta. Aplicarla
+    # al texto final -- como se hacia -- no protegia nada en streaming: para
+    # cuando se calculaba, los deltas ya habian salido, y streaming es
+    # justamente el modo que usa la plataforma. El redactor retiene una cola
+    # para que un dato partido entre dos deltas tampoco se escape.
+    redactor = guardrails.RedactorDeFlujo()
     try:
         for tipo, carga in agent.responder(mensajes, instrucciones, guias, effort):
             if tipo == "delta":
-                yield emisor.delta(str(carga))
+                seguro = redactor.empujar(str(carga))
+                if seguro:
+                    yield emisor.delta(seguro)
             else:
                 resumen = carga
     except Exception as exc:  # noqa: BLE001
         registrar_error("fallo_stream", detalle=str(exc), id_conversacion=id_conv)
+        # Lo retenido se suelta antes del error: es texto que el modelo ya
+        # produjo y que perderlo no arregla nada. Ya viene redactado.
+        cola_parcial = redactor.cerrar()
+        if cola_parcial:
+            yield emisor.delta(cola_parcial)
         yield from emisor.error("El agente fallo a mitad de la respuesta.")
         return
 
+    # Se suelta la cola retenida antes de cerrar el mensaje.
+    cola = redactor.cerrar()
+    if cola:
+        yield emisor.delta(cola)
+
     etiquetas: list[str] = list(etiquetas_politica or [])
+    etiquetas += redactor.etiquetas
     if resumen is not None:
-        etiquetas += guardrails.verificar_fundamento(resumen.texto, resumen.citas)
-        etiquetas += guardrails.verificar_academico(resumen.texto)
+        # Sobre el texto ya redactado: es lo que de verdad recibio el cliente.
+        texto_emitido, _ = guardrails.redactar_pii(resumen.texto)
+        etiquetas += guardrails.verificar_fundamento(texto_emitido, resumen.citas)
+        etiquetas += guardrails.verificar_academico(texto_emitido)
 
     yield from emisor.fin(
         resumen.tokens_entrada if resumen else 0,

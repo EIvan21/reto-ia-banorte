@@ -135,6 +135,23 @@ def registrar_turno(
         _ejecutor.submit(_insertar_en_bq, fila)
 
 
+def vaciar(timeout: float = 5.0) -> None:
+    """Espera a que salgan las filas en vuelo. Se llama al apagar el servicio.
+
+    El sink corre en un pool de hilos para que la observabilidad no le agregue
+    latencia a nadie. El costo es que al apagarse la instancia puede haber filas
+    a medio camino: Cloud Run manda SIGTERM y el proceso se va sin esperarlas.
+
+    Perder telemetria al apagar es peor de lo que parece, porque no se pierde al
+    azar: se pierde justo la del final -- despliegues, picos, reinicios por
+    error. Los momentos sobre los que uno mas quiere mirar los datos despues.
+    """
+    if not TELEMETRY_ENABLED:
+        return
+    _ejecutor.shutdown(wait=True, cancel_futures=False)
+    _log.info(json.dumps({"severity": "INFO", "evento": "telemetria_vaciada"}))
+
+
 def registrar(evento: str, **campos: Any) -> None:
     """Log estructurado de proposito general."""
     _log.info(json.dumps({"severity": "INFO", "evento": evento, **campos}, ensure_ascii=False))

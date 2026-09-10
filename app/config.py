@@ -86,6 +86,12 @@ MAX_INPUT_CHARS = int(os.getenv("MAX_INPUT_CHARS", "8000"))
 MAX_TURNS_IN_TRANSCRIPT = int(os.getenv("MAX_TURNS_IN_TRANSCRIPT", "240"))
 MAX_TRANSCRIPT_CHARS = int(os.getenv("MAX_TRANSCRIPT_CHARS", "120000"))
 
+# Tope del cuerpo crudo de la peticion. Va antes del parseo: acotar el transcript
+# protege al modelo, pero no impide que una peticion enorme se cargue entera a
+# memoria primero. 2 MB dan margen de sobra para un transcript largo con
+# imagenes en base64 (que pesan ~4/3 del binario).
+MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", str(2 * 1024 * 1024)))
+
 # --- Telemetria -------------------------------------------------------------
 # Sink en BigQuery. Si no hay dataset configurado, la telemetria solo va a
 # stdout como JSON estructurado (que Cloud Logging ya indexa por si solo).

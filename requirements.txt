@@ -1,6 +1,11 @@
-anthropic>=0.70.0
-fastapi>=0.115.0
-google-cloud-bigquery>=3.25.0
-google-cloud-storage>=2.18.0
-mcp>=2.0.0
-uvicorn[standard]>=0.32.0
+# Versiones exactas, no rangos. Con >= el contenedor que se construye hoy no es
+# el mismo que se construyo ayer: un fallo que solo aparece en produccion se
+# vuelve imposible de reproducir, y un despliegue de emergencia puede traer una
+# version que nadie probo. Estas son con las que corren las 226 pruebas offline
+# y los 45 casos del conjunto dorado.
+anthropic==1.4.0
+fastapi==0.141.1
+google-cloud-bigquery==3.45.0
+google-cloud-storage==3.14.1
+mcp==2.2.0
+uvicorn[standard]==0.52.4

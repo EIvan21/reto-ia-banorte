@@ -234,6 +234,7 @@ gcloud run deploy "$SERVICIO" \
   --cpu 1 \
   --timeout 300 \
   --concurrency 40 \
+  --no-cpu-throttling \
   --min-instances "$MIN_INSTANCIAS" \
   --max-instances "$MAX_INSTANCIAS" \
   --set-secrets "ANTHROPIC_API_KEY=${SECRETO}:latest,AGENT_API_KEY=${SECRETO_AGENTE}:latest" \
