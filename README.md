@@ -119,20 +119,42 @@ el agente guardando el estado. **Se eligió el primero.**
 
 Sin estado no hay sesiones que expiren, ni base de datos que respaldar, ni pegamento para que
 varias instancias compartan memoria: Cloud Run puede escalar horizontalmente sin coordinación.
-El costo es reenviar el transcript en cada turno, que a esta longitud de conversación es
-irrelevante, y se mitiga con caché de prompt sobre el prefijo estable (system + herramientas).
+El costo es reenviar el transcript en cada turno. Se mitiga con **dos puntos de caché**: uno
+sobre el prefijo estable (system + herramientas, ~4,500 tokens) y otro al final del historial
+estable. El segundo es el que importa, porque la conversación es la parte que crece. Medido
+contra la API con una conversación de cinco turnos: **77–95% de la entrada servida desde
+caché** a partir del segundo turno.
 
-Para telemetría hace falta agrupar los turnos de una misma conversación. Se resuelve sin estado:
-el hash del primer mensaje del usuario es estable durante toda la conversación y sirve de
-identificador.
+Eso no es resumir. No se pierde un hecho ni se reescribe una frase: es el mismo contexto
+exacto, cobrado como lectura de caché. Es la única optimización de memoria compatible con la
+garantía de no inventar — un resumen es una paráfrasis con pérdida, y parafrasear hechos del CV
+es exactamente el mecanismo por el que apareció un título fabricado en una conversación real.
+
+**La ventana son 240 mensajes o 120k caracteres**, lo que se agote primero. Al recortar se
+inserta un aviso explícito en el lugar del hueco, pidiendo volver a consultar las herramientas,
+y se anota en telemetría. El tope estuvo en 40 y eso descartaba la mitad de una conversación de
+36 turnos **en silencio**: el modelo recibía una conversación aparentemente continua con un
+hueco adentro, que es justo la condición en la que contesta de memoria en vez de consultar.
+
+Para telemetría hace falta agrupar los turnos de una misma conversación. Si la plataforma manda
+identidad (`user`, `conversation`, `metadata`), esa manda. Si no, se deriva del hash del primer
+mensaje del usuario, que es estable durante toda la conversación. El campo
+`identidad_de_plataforma` distingue los dos casos, para que al analizar no se confunda una
+agrupación aproximada con identidad real.
 
 ### 3. Claude Opus 5 con effort bajo
 
 `claude-opus-5` con thinking adaptativo y `effort: low`. La calidad del razonamiento no es el
 cuello de botella —las respuestas se fundamentan en herramientas, no en razonamiento libre—
 pero la latencia sí importa en un chat. Effort bajo da respuestas en 2–4 s manteniendo el
-seguimiento estricto de instrucciones, que es lo que aquí realmente importa. Es una variable
-de entorno: se sube sin recompilar.
+seguimiento estricto de instrucciones, que es lo que aquí realmente importa.
+
+**Y se puede ajustar por petición.** Opus 5 eliminó `temperature`, `top_p` y `top_k`: `effort`
+es el único control de profundidad que el modelo todavía expone, así que ignorarlo obligaría a
+redesplegar para probar el agente con más profundidad. Se acepta
+`{"reasoning": {"effort": "medium"}}` en el cuerpo de la petición, validado contra
+`low | medium | high`. `xhigh` y `max` se rechazan a propósito: en un chat en vivo multiplican
+la latencia para preguntas que se resuelven con una búsqueda en un CV de 30 entradas.
 
 **Fallback de servidor ante rechazos.** Si el modelo declina por política, la API reintenta el
 mismo request en un modelo de respaldo dentro de la misma llamada. Un agente de CV no debería
@@ -159,6 +181,26 @@ La señal de ausencia sigue la misma lógica de fallar en silencio: sólo se mar
 el CV" un término que **parezca nombre de tecnología** (mayúscula a media frase, dígitos, o lista
 conocida). Marcar vocabulario común llevaría al agente a negar experiencia en "carrera" o
 "desafiante", que es peor que no avisar nada.
+
+**El control de formación académica.** En una conversación real de 36 turnos el agente afirmó
+que Edher es *"Ingeniero en Sistemas Computacionales por el Tecnológico Nacional de México,
+titulado en 2020"*. Es falso en las tres partes: Ingeniería en Energía, UAM, 2021. Es la clase de
+invento más cara que existe aquí — suena perfectamente plausible para este perfil, quien lo lee
+no tiene cómo saber que está mal, y es un dato que se verifica en un título.
+
+No se pudo reproducir en aislamiento (seis intentos, seis respuestas correctas), así que en vez
+de seguir persiguiéndolo con el prompt se le puso una red que lo **caza** si vuelve. Se puede
+hacer de forma determinista, cuando "detectar alucinaciones" en general no se puede, porque los
+nombres de institución son sustantivos propios con prefijos reconocibles y el conjunto válido
+para este CV es cerrado y tiene cuatro elementos.
+
+El vocabulario se **deriva del CV**, no se escribe a mano: una lista a mano sería una segunda
+fuente de verdad que se desincroniza en silencio, que es justo como empiezan estos fallos. No
+bloquea, etiqueta — bloquear por coincidencia de patrón rompería el caso legítimo de citar una
+vacante que menciona otra universidad. La etiqueta viaja a telemetría, donde es alertable.
+
+Quince casos de prueba, incluidos los que **no** debe marcar: un control que marca la verdad es
+peor que no tenerlo, porque entrena a quien opera a ignorar la alerta.
 
 ### 6. Autenticación donde protege algo, y sólo ahí
 
@@ -236,7 +278,7 @@ producto peor, aunque conversacionalmente sea más vistoso.
 
 Tres capas, de más barata a más cara:
 
-### Capa 1 — Pruebas offline (49 pruebas, 0.1 s, gratis, en cada push)
+### Capa 1 — Pruebas offline (214 pruebas, ~2 s, gratis, en cada push)
 
 ```bash
 pytest evals/test_offline.py -v
@@ -247,9 +289,9 @@ subcadena como regresión), guardrails en ambas direcciones, y conformidad del p
 secuencia de eventos SSE, que `event:` coincida con el `type` del cuerpo, numeración correlativa
 y terminador `[DONE]`.
 
-### Capa 2 — Conjunto dorado contra el modelo real (41 casos, ~1 USD)
+### Capa 2 — Conjunto dorado contra el modelo real (45 casos, ~1 USD)
 
-**Última corrida: 41/41 (100%) en 57.8 s.**
+**Última corrida: 45/45 (100%).**
 
 | Categoría | | | Categoría | |
 |---|---|---|---|---|

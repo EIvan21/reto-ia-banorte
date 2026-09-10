@@ -1497,3 +1497,76 @@ def test_un_esfuerzo_invalido_no_rompe_la_peticion(monkeypatch):
     )
     assert r.status_code == 200, r.text[:300]
     assert r.json()["error"] is None
+
+
+def test_la_tarjeta_anuncia_lo_que_el_agente_de_verdad_hace():
+    """La tarjeta anunciaba 2 skills cuando el agente hace 6, y esa lista es lo
+    que la plataforma muestra como capacidades. Cada una tiene que tener codigo
+    detras: anunciar algo que no se cumple es peor que no anunciarlo."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+    from app.tools import TOOL_DEFS
+
+    skills = TestClient(app).get("/.well-known/agent-card.json").json()["skills"]
+    ids = {s["id"] for s in skills}
+
+    # Las que dependen de una herramienta existen porque la herramienta existe.
+    herramientas = {t["name"] for t in TOOL_DEFS}
+    assert "evaluar-vacante" in ids and "evaluar_vacante" in herramientas
+    assert "generar-reporte" in ids and "generar_reporte" in herramientas
+
+    for s in skills:
+        assert s["id"] and s["name"] and s["description"], s
+        assert len(s["description"]) > 40, f"descripcion demasiado vaga: {s['id']}"
+
+    # No se anuncia nada de archivos: el agente no los maneja.
+    assert not any("archivo" in s["id"] or "file" in s["id"] for s in skills)
+
+
+def test_los_modos_de_entrada_coinciden_con_lo_que_el_parser_acepta():
+    """defaultInputModes es una promesa. Si dice que acepta un formato que el
+    parser no entiende, el agente falla callado."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+    from app.openresponses import _PREFIJO_DATOS
+
+    modos = TestClient(app).get("/.well-known/agent-card.json").json()["defaultInputModes"]
+    for modo in modos:
+        if modo.startswith("image/"):
+            assert _PREFIJO_DATOS.match(f"data:{modo};base64,AAAA"), (
+                f"se anuncia {modo} pero el parser no lo acepta"
+            )
+        else:
+            assert modo == "text/plain", f"modo anunciado sin soporte: {modo}"
+
+
+def test_los_conteos_de_pruebas_en_la_documentacion_estan_al_dia():
+    """El README decia 49 pruebas y el conjunto dorado 41 casos cuando eran 214
+    y 45. Un numero viejo en un repositorio publico hace dudar de los demas."""
+    import re
+
+    import yaml
+
+    raiz = Path(__file__).resolve().parents[1]
+    reales = len(re.findall(r"^def test_", Path(__file__).read_text(encoding="utf-8"), re.M))
+    dorados = yaml.safe_load((raiz / "evals" / "golden.yaml").read_text(encoding="utf-8"))
+    n_dorados = len(dorados["casos"] if isinstance(dorados, dict) else dorados)
+
+    texto = (raiz / "README.md").read_text(encoding="utf-8")
+
+    m = re.search(r"Pruebas offline \((\d+) pruebas", texto)
+    assert m, "el README ya no anuncia el numero de pruebas"
+    # Se comparan funciones test_ declaradas, no casos expandidos por parametrize:
+    # el numero del README es el que un lector cuenta abriendo el archivo.
+    anunciadas = int(m.group(1))
+    assert anunciadas >= reales, (
+        f"el README anuncia {anunciadas} pruebas y hay al menos {reales} funciones test_"
+    )
+
+    m = re.search(r"Conjunto dorado contra el modelo real \((\d+) casos", texto)
+    assert m, "el README ya no anuncia el numero de casos dorados"
+    assert int(m.group(1)) == n_dorados, (
+        f"el README dice {m.group(1)} casos dorados y golden.yaml tiene {n_dorados}"
+    )

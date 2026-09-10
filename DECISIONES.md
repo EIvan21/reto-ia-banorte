@@ -344,7 +344,7 @@ Cuatro capas, de más barata a más cara:
 
 | Capa | Qué cubre | Costo | Cuándo |
 |---|---|---|---|
-| **123 pruebas offline** | Recuperación, guardrails, protocolo, imágenes, clasificación | 2 s, gratis | Cada push (CI) |
+| **214 pruebas offline** | Recuperación, guardrails, protocolo, imágenes, clasificación | 2 s, gratis | Cada push (CI) |
 | **42 casos dorados** | Comportamiento real contra el modelo | ~1 USD | Antes de desplegar |
 | **32 verificaciones de contrato** | Contra el endpoint YA desplegado | centavos | Antes de registrar |
 | **Contrato verificado** | Contra el agente de referencia del reto | — | Una vez |
