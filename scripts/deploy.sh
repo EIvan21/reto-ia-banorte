@@ -11,7 +11,15 @@
 
 set -euo pipefail
 
-PROYECTO="${PROYECTO:-$(gcloud config get-value project 2>/dev/null)}"
+# El proyecto de este agente, fijado en el repo. Antes se heredaba de
+# `gcloud config get-value project`, es decir del estado global de la maquina:
+# con otro proyecto activo, este script creo secretos con la API key, un bucket
+# y permisos IAM en el proyecto equivocado antes de fallar el build. Un
+# despliegue no debe depender de en que directorio estuvo uno antes.
+#
+# Se puede apuntar a otro proyecto a proposito con PROYECTO=... ./deploy.sh
+PROYECTO_ESPERADO="cv-agent-edher"
+PROYECTO="${PROYECTO:-$PROYECTO_ESPERADO}"
 REGION="${REGION:-us-central1}"
 SERVICIO="${SERVICIO:-cv-agent}"
 SECRETO="${SECRETO:-anthropic-api-key}"
@@ -23,8 +31,14 @@ MIN_INSTANCIAS="${MIN_INSTANCIAS:-1}"
 MAX_INSTANCIAS="${MAX_INSTANCIAS:-10}"
 
 if [[ -z "$PROYECTO" ]]; then
-  echo "ERROR: no hay proyecto de GCP. Corre: gcloud config set project TU_PROYECTO" >&2
+  echo "ERROR: no hay proyecto de GCP." >&2
   exit 1
+fi
+
+ACTIVO="$(gcloud config get-value project 2>/dev/null || true)"
+if [[ -n "$ACTIVO" && "$ACTIVO" != "$PROYECTO" ]]; then
+  echo "AVISO: el proyecto activo de gcloud es '$ACTIVO', y se va a desplegar" >&2
+  echo "       en '$PROYECTO'. Se usa el del script, no el del ambiente." >&2
 fi
 
 echo "==> Proyecto:  $PROYECTO"
