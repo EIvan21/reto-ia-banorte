@@ -83,6 +83,16 @@ BQ_DATASET = os.getenv("BQ_DATASET", "").strip()
 BQ_TABLE = os.getenv("BQ_TABLE", "agent_events").strip()
 TELEMETRY_ENABLED = bool(BQ_PROJECT and BQ_DATASET)
 
+# --- Version desplegada -----------------------------------------------------
+# El commit con el que se construyo esta revision. Lo inyecta deploy.sh. Sin
+# esto no habia forma de saber que codigo corre en produccion: las revisiones de
+# Cloud Run no guardan referencia a git, y el despliegue sube la carpeta local,
+# no lo que esta en GitHub. "desconocido" es la respuesta honesta cuando se
+# corre fuera de un despliegue (local, pruebas).
+GIT_SHA = os.getenv("GIT_SHA", "desconocido")
+GIT_LIMPIO = os.getenv("GIT_LIMPIO", "").lower() != "false"
+
+
 # --- Identidad del agente ---------------------------------------------------
 AGENT_NAME = os.getenv("AGENT_NAME", "CV de Edher Diaz")
 AGENT_VERSION = "1.0.0"

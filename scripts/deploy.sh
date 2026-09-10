@@ -176,9 +176,38 @@ gcloud iam service-accounts add-iam-policy-binding "$CUENTA_SERVICIO" \
 # Primer despliegue sin PUBLIC_BASE_URL: todavia no se conoce la URL. Se corrige
 # en el segundo paso, una vez que Cloud Run la asigna.
 echo
+# --- Sello de version -------------------------------------------------------
+# `gcloud run deploy --source .` sube la CARPETA LOCAL, no lo que esta en
+# GitHub. Sin dejar constancia del commit, produccion podia traer codigo que no
+# existe en ningun otro lado y nadie tenia como notarlo: las revisiones de Cloud
+# Run no guardan referencia a git.
+GIT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo desconocido)"
+if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
+  GIT_LIMPIO="false"
+  echo "AVISO: hay cambios sin commitear y se van a desplegar." >&2
+  echo "       El servicio quedara marcado como construido desde un arbol sucio." >&2
+  git status --short >&2
+else
+  GIT_LIMPIO="true"
+fi
+echo "==> Version:   $GIT_SHA (arbol limpio: $GIT_LIMPIO)"
+
+# El nombre de la revision lleva el commit, para que cada despliegue se pueda
+# rastrear hasta su mensaje en GitHub. Por defecto Cloud Run las llama
+# cv-agent-00021-7sr: dicen cuando se desplego, no que cambio.
+SUFIJO="$GIT_SHA"
+if gcloud run revisions describe "${SERVICIO}-${SUFIJO}" \
+     --region "$REGION" --project "$PROYECTO" &>/dev/null; then
+  # Ya se desplego este commit antes. Se distingue por hora en vez de fallar.
+  SUFIJO="${GIT_SHA}-$(date +%H%M%S)"
+fi
+echo "==> Revision:  ${SERVICIO}-${SUFIJO}"
+
+
 echo "==> Desplegando (build remoto con Cloud Build)..."
 gcloud run deploy "$SERVICIO" \
   --source . \
+  --revision-suffix "$SUFIJO" \
   --project "$PROYECTO" \
   --region "$REGION" \
   --platform managed \
@@ -191,7 +220,7 @@ gcloud run deploy "$SERVICIO" \
   --min-instances "$MIN_INSTANCIAS" \
   --max-instances "$MAX_INSTANCIAS" \
   --set-secrets "ANTHROPIC_API_KEY=${SECRETO}:latest,AGENT_API_KEY=${SECRETO_AGENTE}:latest" \
-  --set-env-vars "MODEL=claude-opus-5,EFFORT=low,BQ_PROJECT=${BQ_PROJECT:-},BQ_DATASET=${BQ_DATASET:-},REPORTES_BUCKET=${BUCKET_REPORTES}" \
+  --set-env-vars "MODEL=claude-opus-5,EFFORT=low,BQ_PROJECT=${BQ_PROJECT:-},BQ_DATASET=${BQ_DATASET:-},REPORTES_BUCKET=${BUCKET_REPORTES},GIT_SHA=${GIT_SHA},GIT_LIMPIO=${GIT_LIMPIO}" \
   --quiet
 
 URL="$(gcloud run services describe "$SERVICIO" \

@@ -1172,3 +1172,32 @@ def test_el_redactor_no_toca_anios():
     salida, etiquetas = guardrails.redactar_pii("Trabajo ahi de 2021 a 2024.")
     assert salida == "Trabajo ahi de 2021 a 2024."
     assert not etiquetas
+
+
+# --- Trazabilidad de la version desplegada ----------------------------------
+# No habia forma de saber que commit corre en produccion: las revisiones de
+# Cloud Run no guardan referencia a git, y el despliegue sube la carpeta LOCAL,
+# no lo que esta en GitHub. Produccion podia traer codigo que no existe en
+# ningun otro lado.
+
+
+def test_salud_reporta_la_version_desplegada():
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    cuerpo = TestClient(app).get("/salud").json()
+    assert "version" in cuerpo, "sin esto no se puede saber que codigo corre"
+    assert "construido_desde_arbol_limpio" in cuerpo
+
+
+def test_el_despliegue_sella_el_commit_y_nombra_la_revision():
+    """Si alguien quita esto del script, /salud dice 'desconocido' para siempre
+    y nadie lo nota hasta que hace falta."""
+    guion = (Path(__file__).resolve().parents[1] / "scripts" / "deploy.sh").read_text(
+        encoding="utf-8"
+    )
+    assert "GIT_SHA=" in guion, "el despliegue no calcula el commit"
+    assert "GIT_SHA=${GIT_SHA}" in guion, "el commit no llega al contenedor"
+    assert "--revision-suffix" in guion, "las revisiones no llevan el commit en el nombre"
+    assert "git status --porcelain" in guion, "no avisa si se despliega un arbol sucio"
