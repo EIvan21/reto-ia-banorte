@@ -21,6 +21,28 @@ from .config import MAX_INPUT_CHARS
 # --- Entrada ----------------------------------------------------------------
 
 
+def texto_plano(contenido) -> str:
+    """Devuelve el texto de un contenido de mensaje, sea cual sea su forma.
+
+    Un mensaje de solo texto trae `content` como cadena. Uno con imagen lo trae
+    como LISTA de bloques. Todo lo que inspecciona la entrada -- guardrails,
+    politicas, clasificacion -- tiene que pasar por aqui, porque el que lo
+    olvide revienta con 500 en cuanto alguien pega una captura.
+
+    Las imagenes se descartan a proposito: estas funciones analizan lenguaje.
+    Lo que venga escrito DENTRO de una imagen se trata en el prompt, y como
+    dato, nunca como instruccion.
+    """
+    if isinstance(contenido, str):
+        return contenido
+    if isinstance(contenido, list):
+        return " ".join(
+            b.get("text", "") for b in contenido
+            if isinstance(b, dict) and b.get("type") == "text"
+        )
+    return "" if contenido is None else str(contenido)
+
+
 def _sin_acentos(texto: str) -> str:
     """Quita acentos para que los patrones empaten con como escribe la gente.
 
@@ -69,11 +91,31 @@ class Veredicto:
     etiquetas: list[str] = field(default_factory=list)
 
 
-def revisar_entrada(texto: str) -> Veredicto:
-    """Revisa el mensaje del usuario antes de gastar una llamada al modelo."""
+def tiene_imagen(contenido) -> bool:
+    """Si el mensaje trae al menos un bloque de imagen."""
+    return isinstance(contenido, list) and any(
+        isinstance(b, dict) and b.get("type") == "image" for b in contenido
+    )
+
+
+def revisar_entrada(texto: str, hay_imagen: bool = False) -> Veredicto:
+    """Revisa el mensaje del usuario antes de gastar una llamada al modelo.
+
+    `hay_imagen` existe porque una imagen SIN texto no es una entrada vacia:
+    pegar la captura de una vacante y no escribir nada es exactamente lo que
+    hace la gente, y el guardrail respondia "no recibi ninguna pregunta" con la
+    imagen ahi delante.
+    """
+    # Defensa de tipo, no de contenido. La firma dice str, pero un mensaje con
+    # imagen llega como lista de bloques, y este guardrail es la PRIMERA cosa
+    # que toca la entrada: si revienta aqui, revienta toda la peticion. Quien
+    # llama ya extrae el texto; esto es para que un tercer sitio que lo olvide
+    # degrade en vez de tumbar el servicio.
+    texto = texto_plano(texto)
+
     limpio = (texto or "").strip()
 
-    if not limpio:
+    if not hay_imagen and not limpio:
         return Veredicto(
             permitido=False,
             motivo="entrada_vacia",
@@ -453,7 +495,7 @@ def guias_de_politica(mensajes: list[dict], umbral_escalada: int = 3) -> tuple[l
     en cada turno. Asi funciona sin guardar estado en el servidor: la conversacion
     misma es la memoria.
     """
-    del_usuario = [m["content"] for m in mensajes if m.get("role") == "user"]
+    del_usuario = [texto_plano(m.get("content")) for m in mensajes if m.get("role") == "user"]
     if not del_usuario:
         return [], []
 

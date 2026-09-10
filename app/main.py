@@ -173,10 +173,7 @@ def _ultima_pregunta(mensajes: list[dict]) -> str:
     nunca se guarda ni se registra."""
     for m in reversed(mensajes):
         if m.get("role") == "user":
-            contenido = m.get("content", "")
-            if isinstance(contenido, str):
-                return contenido
-            return " ".join(b.get("text", "") for b in contenido if b.get("type") == "text")
+            return guardrails.texto_plano(m.get("content"))
     return ""
 
 
@@ -297,10 +294,19 @@ async def crear_respuesta(request: Request, authorization: str | None = Header(d
             mensajes_omitidos=mensajes_omitidos,
             mensajes_enviados=len(mensajes),
         )
-    ultimo_usuario = next((m["content"] for m in reversed(mensajes) if m["role"] == "user"), "")
+    # _ultima_pregunta y no m['content'] a secas: cuando el mensaje trae una
+    # imagen, content es una lista de bloques y no una cadena. Pasar esa lista
+    # al guardrail reventaba con 500 justo en el caso para el que las imagenes
+    # existen -- alguien pega la captura de una vacante.
+    ultimo_usuario = _ultima_pregunta(mensajes)
 
     # --- Guardrail de entrada: puede cortar antes de gastar una llamada al modelo
-    veredicto = guardrails.revisar_entrada(ultimo_usuario)
+    _contenido_ultimo = next(
+        (m.get("content") for m in reversed(mensajes) if m.get("role") == "user"), ""
+    )
+    veredicto = guardrails.revisar_entrada(
+        ultimo_usuario, hay_imagen=guardrails.tiene_imagen(_contenido_ultimo)
+    )
     if not veredicto.permitido:
         registrar("guardrail_entrada_bloqueo", motivo=veredicto.motivo, id_conversacion=id_conv)
         registrar_turno(

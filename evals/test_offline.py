@@ -1296,3 +1296,81 @@ def test_la_documentacion_no_miente_sobre_cuantas_herramientas_hay():
             assert dicho in esperado, (
                 f"{nombre} dice '{m.group(0)}' y hay {n} herramientas"
             )
+
+
+# --- Mensajes con imagen ----------------------------------------------------
+# El servidor devolvia 500 en CUALQUIER mensaje con imagen. Un mensaje de solo
+# texto trae content como cadena; uno con imagen lo trae como lista de bloques,
+# y dos sitios distintos le pasaban esa lista a funciones que esperaban texto.
+# Fallaba justo en el caso para el que las imagenes existen: alguien pega la
+# captura de una vacante.
+
+# PNG 1x1 transparente, del tamano de lo que manda un cliente real.
+_PNG = ("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
+        "+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==")
+_IMG = {"type": "input_image", "image_url": "data:image/png;base64," + _PNG}
+
+
+def _post_bloques(monkeypatch, bloques):
+    _sin_modelo(monkeypatch, "Leo la vacante.")
+    return _cliente().post(
+        "/v1/responses",
+        json={"input": [{"role": "user", "type": "message", "content": bloques}]},
+    )
+
+
+@pytest.mark.parametrize("nombre,bloques", [
+    ("texto e imagen", [{"type": "input_text", "text": "Que dice esta vacante?"}, _IMG]),
+    ("solo imagen", [_IMG]),
+    ("imagen por url", [{"type": "input_image", "image_url": "https://ejemplo.com/v.png"}]),
+])
+def test_un_mensaje_con_imagen_no_revienta(monkeypatch, nombre, bloques):
+    r = _post_bloques(monkeypatch, bloques)
+    assert r.status_code == 200, f"{nombre}: {r.status_code} {r.text[:300]}"
+    assert r.json()["error"] is None
+
+
+def test_una_imagen_sin_texto_no_es_una_entrada_vacia(monkeypatch):
+    """Pegar la captura y no escribir nada es lo que hace la gente. El guardrail
+    respondia "no recibi ninguna pregunta" con la imagen ahi delante."""
+    r = _post_bloques(monkeypatch, [_IMG])
+    texto = "".join(
+        c["text"] for o in r.json()["output"] for c in o["content"]
+        if c.get("type") == "output_text"
+    )
+    assert "no recibi" not in texto.lower(), texto
+
+
+def test_un_mensaje_de_verdad_vacio_si_se_bloquea(monkeypatch):
+    """Aceptar imagenes sin texto no puede abrir la puerta al mensaje vacio."""
+    r = _post_bloques(monkeypatch, [{"type": "input_text", "text": "   "}])
+    texto = "".join(
+        c["text"] for o in r.json()["output"] for c in o["content"]
+        if c.get("type") == "output_text"
+    )
+    assert "no recibi" in texto.lower(), texto
+
+
+@pytest.mark.parametrize("contenido,esperado", [
+    ("hola", "hola"),
+    ([{"type": "text", "text": "hola"}], "hola"),
+    ([{"type": "text", "text": "a"}, {"type": "image", "source": {}}], "a"),
+    ([{"type": "image", "source": {}}], ""),
+    (None, ""),
+    ([], ""),
+])
+def test_texto_plano_soporta_cualquier_forma_de_contenido(contenido, esperado):
+    """Un solo helper para todos los sitios que inspeccionan la entrada. Ir
+    tapandolos de uno en uno fue como se acumulo este fallo."""
+    assert guardrails.texto_plano(contenido) == esperado
+
+
+def test_las_politicas_de_tema_leen_el_texto_dentro_de_los_bloques(monkeypatch):
+    """Segundo sitio que reventaba: detectar_temas_sensibles recibia la lista."""
+    guias, etiquetas = guardrails.guias_de_politica([
+        {"role": "user", "content": [
+            {"type": "text", "text": "cuanto gana al mes?"},
+            {"type": "image", "source": {}},
+        ]},
+    ])
+    assert any("compensacion" in e for e in etiquetas), etiquetas
