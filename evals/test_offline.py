@@ -10,6 +10,7 @@ desplegar.
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -1374,3 +1375,58 @@ def test_las_politicas_de_tema_leen_el_texto_dentro_de_los_bloques(monkeypatch):
         ]},
     ])
     assert any("compensacion" in e for e in etiquetas), etiquetas
+
+
+# --- Version visible --------------------------------------------------------
+# La tarjeta de agente anunciaba "1.0.0" desde el primer dia, pasaran los
+# despliegues que pasaran. Quien la lee no tenia forma de saber si estaba
+# mirando lo de hoy o lo del primer dia.
+
+
+def test_la_version_lleva_el_commit_cuando_esta_desplegada():
+    import importlib
+
+    import app.config
+
+    original = os.environ.get("GIT_SHA")
+    try:
+        os.environ["GIT_SHA"] = "abc1234"
+        importlib.reload(app.config)
+        assert app.config.AGENT_VERSION.endswith("+abc1234"), app.config.AGENT_VERSION
+    finally:
+        if original is None:
+            os.environ.pop("GIT_SHA", None)
+        else:
+            os.environ["GIT_SHA"] = original
+        importlib.reload(app.config)
+
+
+def test_fuera_de_un_despliegue_la_version_no_inventa_un_commit():
+    """En local vale mas una version sin commit que una con un commit falso."""
+    from app.config import AGENT_VERSION
+
+    assert "desconocido" not in AGENT_VERSION
+
+
+def test_salud_distingue_version_commit_y_revision():
+    """Tres cosas distintas: que sabe hacer, de que codigo salio, y que
+    instancia esta respondiendo."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    cuerpo = TestClient(app).get("/salud").json()
+    for campo in ("version", "commit", "revision", "construido_desde_arbol_limpio"):
+        assert campo in cuerpo, f"falta {campo}"
+
+
+def test_la_tarjeta_de_agente_publica_la_misma_version():
+    from fastapi.testclient import TestClient
+
+    from app.config import AGENT_VERSION
+    from app.main import app
+
+    cliente = TestClient(app)
+    tarjeta = cliente.get("/.well-known/agent-card.json").json()
+    assert tarjeta["version"] == AGENT_VERSION
+    assert tarjeta["version"] == cliente.get("/salud").json()["version"]

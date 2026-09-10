@@ -22,6 +22,7 @@ from .config import (
     AGENT_API_KEY,
     AGENT_NAME,
     AGENT_VERSION,
+    CLOUD_RUN_REVISION,
     GIT_LIMPIO,
     GIT_SHA,
     MAX_TRANSCRIPT_CHARS,
@@ -563,7 +564,9 @@ async def salud():
             "modelo": MODEL,
             # Que commit corre aqui. Es la unica forma de saber, desde fuera, si
             # produccion trae lo mismo que el repositorio.
-            "version": GIT_SHA,
+            "version": AGENT_VERSION,
+            "commit": GIT_SHA,
+            "revision": CLOUD_RUN_REVISION,
             "construido_desde_arbol_limpio": GIT_LIMPIO,
             "cv_version": cv["_meta"]["version"],
             "entradas_cv": {

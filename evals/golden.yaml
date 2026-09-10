@@ -140,8 +140,13 @@ casos:
   - id: hobbies-contenido-ia
     categoria: perfil
     pregunta: "¿Hace algo con IA fuera del trabajo?"
-    herramientas: [buscar_cv]
-    citas: [intereses]
+    # Hay dos caminos validos y la pregunta no distingue: los TikToks viven en
+    # 'intereses', y el sistema multiagente de video y el open source viven en
+    # 'proyectos'. Los dos son IA fuera del trabajo. Fijar uno solo estaba
+    # afirmando el MECANISMO en vez del resultado, y reprobaba la respuesta mas
+    # fuerte de las dos.
+    herramientas: [buscar_cv, obtener_proyectos]
+    citas: [intereses, proy-video-multiagente, open-source]
     contiene_alguna: ["tiktok", "video", "contenido", "veo", "sora"]
 
   - id: hobbies-no-invadan

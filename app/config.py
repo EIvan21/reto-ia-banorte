@@ -95,7 +95,17 @@ GIT_LIMPIO = os.getenv("GIT_LIMPIO", "").lower() != "false"
 
 # --- Identidad del agente ---------------------------------------------------
 AGENT_NAME = os.getenv("AGENT_NAME", "CV de Edher Diaz")
-AGENT_VERSION = "1.0.0"
+# Version del agente. La parte semantica se sube a mano cuando cambia lo que el
+# agente SABE HACER; el commit se pega automaticamente en el despliegue, para que
+# la tarjeta nunca anuncie una version que no corresponde con el codigo que
+# corre. Un "1.0.0" fijo no le sirve a nadie: quien lo lee no puede saber si esta
+# mirando lo de hoy o lo del primer dia.
+_VERSION_BASE = os.getenv("AGENT_VERSION", "1.1.0")
+AGENT_VERSION = f"{_VERSION_BASE}+{GIT_SHA}" if GIT_SHA != "desconocido" else _VERSION_BASE
+
+# Nombre de la revision de Cloud Run. La plataforma la inyecta sola; aqui solo se
+# lee para poder decir, desde fuera, exactamente que instancia esta respondiendo.
+CLOUD_RUN_REVISION = os.getenv("K_REVISION", "")
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:8080").rstrip("/")
 
 
