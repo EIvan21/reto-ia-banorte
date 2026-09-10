@@ -34,10 +34,12 @@
     "id": "contacto",
     "email": "edher.diaz21@gmail.com",
     "linkedin": "https://linkedin.com/in/edherdiaz",
-    "github": "https://github.com/heyedher",
+    "github": "https://github.com/EIvan21",
     "sitio_web": "https://edherivan.com",
     "_nota_privacidad": "El telefono NO se incluye aqui de forma intencional: este repositorio es publico. El agente solo comparte email, LinkedIn, GitHub y sitio web.",
-    "tiktok": "https://tiktok.com/@eivan7678"
+    "tiktok": "https://tiktok.com/@eivan7678",
+    "github_trabajo": "https://github.com/heyedher",
+    "_nota_github": "Tiene dos cuentas y no es un descuido: EIvan21 es la personal, donde estan sus proyectos propios (incluido el agente de este CV). heyedher es la de trabajo, y es donde viven las contribuciones a looker-open-source de Google: el Agent Analytics Block, el GA4 Block y la extension de Looker Stories. Si preguntan por el open source, la cuenta correcta es heyedher; si preguntan por sus proyectos personales o por este agente, EIvan21."
   },
   "habilidades": [
     {
@@ -374,7 +376,8 @@
     "organizacion": "looker-open-source (Google)",
     "bloques_publicados": 30,
     "pull_requests_mergeados": 45,
-    "descripcion": "Contribuidor a la organizacion looker-open-source de Google, con mas de 30 bloques de Looker y 45 pull requests mergeados. Autor principal de tres de esos proyectos."
+    "descripcion": "Contribuidor a la organizacion looker-open-source de Google, con mas de 30 bloques de Looker y 45 pull requests mergeados. Autor principal de tres de esos proyectos.",
+    "donde_verlo": "En github.com/heyedher, que es su cuenta de trabajo. Los bloques estan publicados bajo la organizacion looker-open-source de Google."
   },
   "educacion": [
     {

@@ -1900,3 +1900,21 @@ def test_el_readme_cabe_en_dos_pantallas():
         f"el README tiene {lineas} lineas; la profundidad va en DECISIONES.md "
         "o en docs/OPERACION.md"
     )
+
+
+def test_las_dos_cuentas_de_github_estan_y_se_distinguen():
+    """El open source vive en la cuenta de trabajo y este repositorio en la
+    personal. Dejar solo una pierde evidencia: quien busque el Agent Analytics
+    Block en la cuenta personal no lo encuentra."""
+    contacto = load_cv()["contacto"]
+    assert contacto["github"].endswith("/EIvan21")
+    assert contacto["github_trabajo"].endswith("/heyedher")
+    nota = contacto["_nota_github"]
+    assert "personal" in nota and "trabajo" in nota
+    assert "looker-open-source" in nota, "la nota no dice donde esta el open source"
+
+
+def test_el_agente_puede_recuperar_donde_ver_el_open_source():
+    resultado = tools.ejecutar("buscar_cv", {"consulta": "donde ver su open source", "seccion": ""})
+    texto = json.dumps(resultado, ensure_ascii=False)
+    assert "heyedher" in texto, "no se puede llegar a la cuenta donde estan los bloques"
