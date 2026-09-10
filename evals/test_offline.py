@@ -1918,3 +1918,136 @@ def test_el_agente_puede_recuperar_donde_ver_el_open_source():
     resultado = tools.ejecutar("buscar_cv", {"consulta": "donde ver su open source", "seccion": ""})
     texto = json.dumps(resultado, ensure_ascii=False)
     assert "heyedher" in texto, "no se puede llegar a la cuenta donde estan los bloques"
+
+
+# --- Fase 1.1: una respuesta lenta no puede congelar la instancia -----------
+# crear_respuesta es async pero llamaba a _responder_completo directo, y esa
+# funcion usa el cliente SINCRONO de Anthropic. Mientras corria, nadie mas
+# avanzaba en la instancia -- ni /salud, que es lo que Cloud Run consulta para
+# decidir si el contenedor sigue vivo.
+
+
+def test_una_respuesta_lenta_no_congela_el_resto_de_la_instancia(monkeypatch):
+    """Se lanza una peticion que tarda, y se comprueba que /salud contesta
+    mientras tanto. Si el event loop estuviera bloqueado, /salud esperaria a que
+    la primera terminara."""
+    import threading
+    import time as _time
+
+    from fastapi.testclient import TestClient
+
+    from app import agent, main
+    from app.main import app
+
+    LENTO = 1.5
+    arranco = threading.Event()
+
+    def falso(mensajes, instrucciones="", guias=None, effort=""):
+        arranco.set()
+        _time.sleep(LENTO)
+        yield ("delta", "listo")
+        yield ("fin", agent.ResumenTurno(
+            texto="listo", herramientas_usadas=["buscar_cv"], citas=["perfil"],
+        ))
+
+    monkeypatch.setattr(main.agent, "responder", falso)
+    cliente = TestClient(app, raise_server_exceptions=False)
+
+    resultado = {}
+
+    def peticion_lenta():
+        resultado["status"] = cliente.post(
+            "/v1/responses", json={"input": "hola", "stream": False}
+        ).status_code
+
+    hilo = threading.Thread(target=peticion_lenta)
+    hilo.start()
+    assert arranco.wait(timeout=5), "la peticion lenta nunca arranco"
+
+    inicio = _time.perf_counter()
+    salud = cliente.get("/salud")
+    espera = _time.perf_counter() - inicio
+
+    hilo.join(timeout=15)
+
+    assert salud.status_code == 200
+    assert espera < LENTO * 0.6, (
+        f"/salud tardo {espera:.2f}s mientras otra peticion corria: el event loop "
+        "esta bloqueado"
+    )
+    assert resultado.get("status") == 200
+
+
+def test_la_ruta_no_streaming_no_llama_al_agente_desde_la_corrutina():
+    """Si alguien quita el threadpool, esta prueba lo dice sin depender de
+    tiempos."""
+    import inspect
+
+    from app import main
+
+    fuente = inspect.getsource(main.crear_respuesta)
+    assert "run_in_threadpool" in fuente, (
+        "_responder_completo se llama directo desde una corrutina"
+    )
+
+
+# --- Fase 1.3 y 1.4: dos limites que no limitaban ---------------------------
+
+
+def test_el_presupuesto_del_transcript_cuenta_caracteres_y_no_bloques():
+    """len(content) cuenta BLOQUES cuando el contenido es una lista. Un mensaje
+    con una imagen de 60k caracteres contaba como 2, asi que el presupuesto no
+    acotaba nada en cuanto habia imagenes: medido, 1.2 millones de caracteres
+    pasaron sin recorte."""
+    from app.main import _peso, acotar_transcript
+
+    imagen = "x" * 60_000
+    gordos = [
+        {"role": "user", "content": [
+            {"type": "text", "text": "vacante"},
+            {"type": "image", "source": {"type": "base64", "data": imagen}},
+        ]}
+        for _ in range(20)
+    ]
+    salida, omitidos = acotar_transcript(gordos)
+    assert omitidos > 0, "no recorto nada con 1.2 millones de caracteres"
+    assert sum(_peso(m) for m in salida) < sum(_peso(m) for m in gordos) / 4
+
+
+@pytest.mark.parametrize("contenido,esperado", [
+    ("hola", 4),
+    ([{"type": "text", "text": "hola"}], 4),
+    ([{"type": "image", "source": {"data": "x" * 100}}], 100),
+    ([{"type": "image", "source": {"url": "https://x.com/a.png"}}], 19),
+    ([], 0),
+    (None, 0),
+])
+def test_peso_mide_lo_que_de_verdad_viaja_al_modelo(contenido, esperado):
+    from app.main import _peso
+
+    assert _peso({"content": contenido}) == esperado
+
+
+def test_un_cuerpo_grande_sin_content_length_tambien_se_rechaza():
+    """Una peticion en chunks no declara Content-Length, asi que se saltaba el
+    tope entero."""
+    from app.config import MAX_BODY_BYTES
+
+    grande = {"input": "x" * (MAX_BODY_BYTES + 1000)}
+    r = _cliente().post("/v1/responses", json=grande)
+    assert r.status_code == 413, f"{r.status_code}: paso un cuerpo de mas de {MAX_BODY_BYTES} bytes"
+
+
+def test_todos_los_lugares_que_anuncian_el_numero_de_pruebas_coinciden():
+    """El README decia 250 y requirements.txt decia 226. Cada lugar que repite
+    una cifra es un lugar donde se puede quedar vieja."""
+    raiz = Path(__file__).resolve().parents[1]
+    cifras = {}
+    for nombre, patron in [
+        ("README.md", r"\*\*(\d+) pruebas offline\*\*"),
+        ("requirements.txt", r"las (\d+) pruebas offline"),
+    ]:
+        m = re.search(patron, (raiz / nombre).read_text(encoding="utf-8"))
+        assert m, f"{nombre} ya no anuncia el numero de pruebas"
+        cifras[nombre] = int(m.group(1))
+    assert len(set(cifras.values())) == 1, f"cifras distintas: {cifras}"

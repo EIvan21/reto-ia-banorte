@@ -231,7 +231,7 @@ def verificar_fundamento(texto: str, citas: list[str]) -> list[str]:
 #
 # Redactar el texto final no sirve de nada en streaming: cuando se calcula, los
 # deltas ya salieron. Y no se puede redactar delta por delta, porque un telefono
-# partido entre dos ("55 84" + "69 8350") no coincide con el patron en ninguno
+# partido entre dos ("55 00" + "00 0000") no coincide con el patron en ninguno
 # de los dos fragmentos.
 #
 # La salida es retener una cola. Se acumula, se redacta TODO lo acumulado, y se

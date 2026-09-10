@@ -11,12 +11,14 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import json
 import hmac
 import time
 from typing import Any, AsyncIterator, Iterator
 
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from starlette.concurrency import run_in_threadpool
 
 from . import agent, categorias, guardrails, openresponses
 from .config import (
@@ -56,6 +58,33 @@ AVISO_DE_CORTE = (
 )
 
 
+def _peso(mensaje: dict) -> int:
+    """Cuanto ocupa un mensaje, en caracteres.
+
+    len(content) cuenta BLOQUES cuando el contenido es una lista, no caracteres.
+    Un mensaje con una imagen en base64 de 60k caracteres contaba como 2, asi
+    que el presupuesto del transcript no acotaba nada en cuanto habia imagenes.
+    """
+    contenido = mensaje.get("content")
+    if isinstance(contenido, str):
+        return len(contenido)
+    if isinstance(contenido, list):
+        total = 0
+        for bloque in contenido:
+            if not isinstance(bloque, dict):
+                total += len(str(bloque))
+                continue
+            if bloque.get("type") == "text":
+                total += len(bloque.get("text") or "")
+            else:
+                # Las imagenes pesan por sus datos, que es lo que de verdad
+                # viaja al modelo.
+                fuente = bloque.get("source") or {}
+                total += len(str(fuente.get("data") or fuente.get("url") or ""))
+        return total
+    return len(str(contenido or ""))
+
+
 def acotar_transcript(mensajes: list[dict]) -> tuple[list[dict], int]:
     """Recorta un transcript largo y DEJA CONSTANCIA del recorte.
 
@@ -84,9 +113,15 @@ def acotar_transcript(mensajes: list[dict]) -> tuple[list[dict], int]:
     # Presupuesto de caracteres: manda sobre el conteo de mensajes, porque unos
     # pocos mensajes enormes (alguien pegando una vacante completa) pesan mas
     # que muchos cortos.
+    #
+    # Tiene un piso: nunca baja de 2 mensajes de cabeza mas 2 de cola, porque
+    # sin el ultimo no hay nada que responder. Si esos cuatro ya superan el
+    # presupuesto -- cuatro mensajes con imagenes grandes, por ejemplo -- el
+    # tope duro no es este sino MAX_BODY_BYTES, que corta la peticion antes de
+    # parsearla.
     while cola > 2:
         recorte = mensajes[:cabeza] + mensajes[-cola:] if cola < total else mensajes
-        if sum(len(m.get("content") or "") for m in recorte) <= MAX_TRANSCRIPT_CHARS:
+        if sum(_peso(m) for m in recorte) <= MAX_TRANSCRIPT_CHARS:
             break
         cola -= 2
 
@@ -315,8 +350,22 @@ async def crear_respuesta(request: Request, authorization: str | None = Header(d
             ),
         )
 
+    # Content-Length puede no venir: una peticion en chunks no lo declara y se
+    # saltaba el tope entero. Se vuelve a medir sobre el cuerpo ya leido.
+    crudo = await request.body()
+    if len(crudo) > MAX_BODY_BYTES:
+        registrar("cuerpo_demasiado_grande", bytes=len(crudo), declarado=False)
+        return JSONResponse(
+            status_code=413,
+            content=openresponses.construir_error(
+                id_respuesta, MODEL,
+                f"El cuerpo supera el limite de {MAX_BODY_BYTES} bytes.",
+                "invalid_request",
+            ),
+        )
+
     try:
-        payload = await request.json()
+        payload = json.loads(crudo)
     except Exception:
         return JSONResponse(
             status_code=400,
@@ -412,10 +461,18 @@ async def crear_respuesta(request: Request, authorization: str | None = Header(d
             headers=CABECERAS_SSE,
         )
 
-    return JSONResponse(
-        content=_responder_completo(id_respuesta, id_mensaje, mensajes, instrucciones, id_conv,
-                                    inicio, guias, etiquetas_politica, ids_plataforma, effort)
+    # En threadpool y no directo: _responder_completo usa el cliente SINCRONO de
+    # Anthropic y tarda segundos. Llamarlo desde una corrutina bloquea el event
+    # loop, y con eso toda la instancia -- incluido /salud, que es lo que Cloud
+    # Run consulta para decidir si el contenedor sigue vivo.
+    #
+    # La ruta de streaming no necesita esto: StreamingResponse ve que
+    # _stream_agente es un generador sincrono y lo corre en threadpool sola.
+    cuerpo = await run_in_threadpool(
+        _responder_completo, id_respuesta, id_mensaje, mensajes, instrucciones,
+        id_conv, inicio, guias, etiquetas_politica, ids_plataforma, effort,
     )
+    return JSONResponse(content=cuerpo)
 
 
 # Valor neutro cuando la plataforma no manda identidad. Se define una sola vez
