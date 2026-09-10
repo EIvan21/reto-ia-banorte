@@ -342,15 +342,20 @@ async def crear_respuesta(request: Request, authorization: str | None = Header(d
     if streaming:
         return StreamingResponse(
             _stream_agente(id_respuesta, id_mensaje, mensajes, instrucciones, id_conv, inicio,
-                           guias, etiquetas_politica),
+                           guias, etiquetas_politica, ids_plataforma),
             media_type="text/event-stream",
             headers=CABECERAS_SSE,
         )
 
     return JSONResponse(
         content=_responder_completo(id_respuesta, id_mensaje, mensajes, instrucciones, id_conv,
-                                    inicio, guias, etiquetas_politica)
+                                    inicio, guias, etiquetas_politica, ids_plataforma)
     )
+
+
+# Valor neutro cuando la plataforma no manda identidad. Se define una sola vez
+# para que las dos rutas -- streaming y completa -- registren los mismos campos.
+_IDS_VACIOS = {"id_usuario": "", "id_chat": "", "id_respuesta_previa": ""}
 
 
 def _stream_texto_fijo(id_respuesta: str, id_mensaje: str, texto: str) -> Iterator[str]:
@@ -370,7 +375,9 @@ def _stream_agente(
     inicio: float,
     guias: list[str] | None = None,
     etiquetas_politica: list[str] | None = None,
+    ids_plataforma: dict[str, str] | None = None,
 ) -> Iterator[str]:
+    ids_plataforma = ids_plataforma or _IDS_VACIOS
     emisor = openresponses.EmisorSSE(id_respuesta, id_mensaje, MODEL)
     yield from emisor.inicio()
 
@@ -428,7 +435,9 @@ def _responder_completo(
     inicio: float,
     guias: list[str] | None = None,
     etiquetas_politica: list[str] | None = None,
+    ids_plataforma: dict[str, str] | None = None,
 ) -> dict:
+    ids_plataforma = ids_plataforma or _IDS_VACIOS
     resumen = None
     for tipo, carga in agent.responder(mensajes, instrucciones, guias):
         if tipo == "fin":

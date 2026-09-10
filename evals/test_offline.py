@@ -1040,3 +1040,101 @@ def test_ningun_archivo_del_proyecto_tiene_caracteres_de_control():
         if malos:
             sucios.append(f"{ruta.name}: bytes {sorted(hex(b) for b in malos)}")
     assert not sucios, "caracteres de control en: " + "; ".join(sucios)
+
+
+# --- La capa HTTP, que nadie estaba probando --------------------------------
+# Estas pruebas existen por un 500 que llego a produccion. El bug era trivial --
+# una variable fuera de alcance en dos funciones de modulo -- y aun asi paso
+# limpio por 158 pruebas offline y por 45/45 del conjunto dorado, porque TODAS
+# llaman a agent.responder() directamente y ninguna cruzaba la capa HTTP. El
+# agente estaba perfecto; el servidor devolvia 500 en cada peticion.
+#
+# No llaman al modelo: el guardrail de entrada corta antes, o se sustituye la
+# funcion del agente. Lo que se prueba es el cableado, que es justo lo que
+# fallaba.
+
+
+def _cliente():
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    return TestClient(app, raise_server_exceptions=False)
+
+
+def _sin_modelo(monkeypatch, texto="Respuesta de prueba."):
+    """Sustituye el agente por uno que no llama a la API."""
+    from app import agent, main
+
+    def falso(mensajes, instrucciones="", guias=None):
+        resumen = agent.ResumenTurno(texto=texto, herramientas_usadas=["buscar_cv"],
+                                     citas=["perfil"], tokens_entrada=10, tokens_salida=5)
+        yield ("delta", texto)
+        yield ("fin", resumen)
+
+    monkeypatch.setattr(main.agent, "responder", falso)
+
+
+@pytest.mark.parametrize("payload", [
+    {"input": "Hola"},
+    {"input": "Hola", "stream": False},
+    {"input": [{"role": "user", "content": "Hola"}]},
+    # Con los ids de identidad que manda la plataforma, y sin ellos.
+    {"input": "Hola", "user": "recruiter-42"},
+    {"input": "Hola", "metadata": {"conversation_id": "c1", "user_id": "u1"}},
+    {"input": "Hola", "previous_response_id": "resp_1"},
+])
+def test_el_endpoint_responde_200_y_no_500(monkeypatch, payload):
+    _sin_modelo(monkeypatch)
+    r = _cliente().post("/v1/responses", json=payload)
+    assert r.status_code == 200, f"{r.status_code}: {r.text[:400]}"
+    cuerpo = r.json()
+    assert cuerpo["object"] == "response"
+    assert cuerpo["error"] is None
+
+
+def test_el_endpoint_en_streaming_no_revienta(monkeypatch):
+    _sin_modelo(monkeypatch)
+    r = _cliente().post("/v1/responses", json={"input": "Hola", "stream": True})
+    assert r.status_code == 200, f"{r.status_code}: {r.text[:400]}"
+    cuerpo = r.text
+    assert "data: [DONE]" in cuerpo, "falta el terminador del protocolo"
+    assert "Respuesta de prueba." in cuerpo
+
+
+def test_las_dos_rutas_registran_los_mismos_campos(monkeypatch):
+    """Streaming y completa deben mandar la misma forma a telemetria. Si una de
+    las dos se queda sin un campo, la analitica sale sesgada segun como pregunte
+    cada cliente, y eso no se nota mirando respuestas."""
+    from app import main
+
+    registros: list[dict] = []
+    monkeypatch.setattr(main, "registrar_turno", lambda **kw: registros.append(kw))
+    _sin_modelo(monkeypatch)
+
+    cliente = _cliente()
+    cliente.post("/v1/responses", json={"input": "Hola", "stream": False})
+    cliente.post("/v1/responses", json={"input": "Hola", "stream": True}).text
+
+    assert len(registros) == 2, f"se esperaban 2 registros, hubo {len(registros)}"
+    assert set(registros[0]) == set(registros[1]), (
+        "las dos rutas registran campos distintos: "
+        f"{set(registros[0]) ^ set(registros[1])}"
+    )
+    for r in registros:
+        for campo in ("id_usuario", "id_chat", "id_respuesta_previa",
+                      "identidad_de_plataforma", "id_conversacion"):
+            assert campo in r, f"falta {campo} en un registro de turno"
+
+
+def test_el_healthcheck_responde():
+    for ruta in ("/salud", "/healthcheck"):
+        r = _cliente().get(ruta)
+        assert r.status_code == 200, f"{ruta}: {r.status_code}"
+        assert r.json()["estado"] == "ok"
+
+
+def test_la_tarjeta_de_agente_se_sirve():
+    r = _cliente().get("/.well-known/agent-card.json")
+    assert r.status_code == 200
+    assert r.json().get("name")
