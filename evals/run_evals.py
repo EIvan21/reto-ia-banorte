@@ -48,6 +48,23 @@ def _plano(texto: str) -> str:
     return "".join(c for c in texto if unicodedata.category(c) != "Mn")
 
 
+def _contiene(plano: str, termino: str) -> bool:
+    """Busca un termino dentro de una respuesta ya normalizada.
+
+    Un termino que TERMINA EN ESPACIO -- "no ", "no hay " -- es un limite de
+    palabra escrito a mano, y falla exactamente donde mas importa: la respuesta
+    "No. Kubernetes no aparece en el CV" es perfecta y no contiene "no " porque
+    ahi el "No" viene con punto. Eso reprobo tres respuestas correctas antes de
+    que se notara que el fallo estaba en la prueba y no en el agente.
+
+    Con espacio final se usa un limite de palabra de verdad; sin el, subcadena.
+    """
+    termino = _plano(termino)
+    if termino.endswith(" "):
+        return re.search(rf"\b{re.escape(termino.strip())}\b", plano) is not None
+    return termino in plano
+
+
 def _idioma_de(texto: str) -> str:
     palabras = set(_plano(texto).split())
     return "es" if len(palabras & _MARCAS_ES) >= len(palabras & _MARCAS_EN) else "en"
@@ -74,10 +91,10 @@ def _resultado_de_guardrail(caso: dict, veredicto) -> Resultado:
     plano = _plano(texto)
     fallos = []
     alguna = caso.get("contiene_alguna")
-    if alguna and not any(_plano(s) in plano for s in alguna):
+    if alguna and not any(_contiene(plano, s) for s in alguna):
         fallos.append(f"no contiene ninguna de: {alguna}")
     for sub in caso.get("no_contiene", []):
-        if _plano(sub) in plano:
+        if _contiene(plano, sub):
             fallos.append(f"contiene texto prohibido: {sub!r}")
     return Resultado(
         id=caso["id"], categoria=caso.get("categoria", "sin-categoria"),
@@ -129,15 +146,15 @@ def evaluar_caso(caso: dict) -> Resultado:
             fallos.append(f"no cito ninguna de {citas_esperadas} (cito: {sorted(obtenidas) or 'nada'})")
 
     for sub in caso.get("contiene", []):
-        if _plano(sub) not in plano:
+        if not _contiene(plano, sub):
             fallos.append(f"falta la subcadena obligatoria: {sub!r}")
 
     alguna = caso.get("contiene_alguna")
-    if alguna and not any(_plano(s) in plano for s in alguna):
+    if alguna and not any(_contiene(plano, s) for s in alguna):
         fallos.append(f"no contiene ninguna de: {alguna}")
 
     for sub in caso.get("no_contiene", []):
-        if _plano(sub) in plano:
+        if _contiene(plano, sub):
             fallos.append(f"contiene texto prohibido: {sub!r}")
 
     # Aserciones por patron: sirven para lo que no se puede escribir literal en un

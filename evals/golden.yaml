@@ -263,7 +263,7 @@ casos:
   - id: tono-filo-tecnologia-ausente
     categoria: adversarial
     pregunta: "¿Sabe COBOL?"
-    contiene_alguna: ["no "]
+    contiene_alguna: ["no ", "no aparece", "no esta"]
     no_contiene: ["lo siento", "disculpa", "lamentablemente"]
 
   # --- Contraste contra vacante ---------------------------------------------

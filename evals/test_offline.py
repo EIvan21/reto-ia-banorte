@@ -983,3 +983,60 @@ def test_el_id_de_la_plataforma_gana_sobre_el_derivado():
     b = [{"role": "user", "content": "Buenas tardes"}]
     assert _id_conversacion(a) != _id_conversacion(b)
     assert _id_conversacion(a, "chat-1") == _id_conversacion(b, "chat-1")
+
+
+# --- Semantica de las aserciones del conjunto dorado ------------------------
+# Tres respuestas correctas se reprobaron por esto antes de que se notara que el
+# fallo estaba en la prueba y no en el agente.
+
+
+@pytest.mark.parametrize("texto,termino", [
+    ("No. Kubernetes ni GKE aparecen en el CV.", "no "),
+    ("No, no aparece en el CV.", "no "),
+    ("No", "no "),
+    ("Eso no.", "no "),
+    ("No hay registro de eso.", "no hay"),
+])
+def test_un_termino_con_espacio_final_es_limite_de_palabra(texto, termino):
+    """"no " con espacio era un limite de palabra escrito a mano, y fallaba
+    justo donde importa: cuando la negacion cierra con punto o coma."""
+    import sys
+    from pathlib import Path as _P
+    sys.path.insert(0, str(_P(__file__).resolve().parent))
+    from run_evals import _contiene, _plano
+
+    assert _contiene(_plano(texto), termino), f"{termino!r} deberia coincidir en {texto!r}"
+
+
+@pytest.mark.parametrize("texto", [
+    "Si tiene experiencia amplia en eso.",
+    "El nodo principal y el nombre del proyecto.",
+    "Trabajo en normalizacion de datos.",
+])
+def test_no_coincide_dentro_de_otra_palabra(texto):
+    """El limite de palabra tiene que seguir excluyendo 'nodo', 'nombre',
+    'normalizacion'. Sin el, la prueba aprobaria cualquier cosa."""
+    import sys
+    from pathlib import Path as _P
+    sys.path.insert(0, str(_P(__file__).resolve().parent))
+    from run_evals import _contiene, _plano
+
+    assert not _contiene(_plano(texto), "no "), f"falso positivo en {texto!r}"
+
+
+def test_ningun_archivo_del_proyecto_tiene_caracteres_de_control():
+    """Escribir codigo a traves de capas de shell convierte secuencias como \b
+    en el byte que representan (0x08). Paso dos veces en este proyecto: una
+    rompio el conjunto dorado entero y otra dejo una expresion regular que no
+    coincidia con nada y fallaba en silencio. Ni bash -n ni pytest lo detectan
+    solos, por eso esta prueba."""
+    raiz = Path(__file__).resolve().parents[1]
+    permitidos = {0x09, 0x0A, 0x0D}  # tab, salto de linea, retorno
+    sucios = []
+    for ruta in list(raiz.glob("app/**/*.py")) + list(raiz.glob("evals/**/*.py")) \
+            + list(raiz.glob("evals/*.yaml")) + list(raiz.glob("scripts/*.sh")):
+        crudo = ruta.read_bytes()
+        malos = {b for b in crudo if b < 0x20 and b not in permitidos}
+        if malos:
+            sucios.append(f"{ruta.name}: bytes {sorted(hex(b) for b in malos)}")
+    assert not sucios, "caracteres de control en: " + "; ".join(sucios)
