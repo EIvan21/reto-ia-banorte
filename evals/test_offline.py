@@ -1276,3 +1276,23 @@ def test_el_cuerpo_del_protocolo_no_lleva_campos_de_cache():
 
     firma = inspect.signature(openresponses.construir_respuesta)
     assert not [p for p in firma.parameters if "cache" in p]
+
+
+def test_la_documentacion_no_miente_sobre_cuantas_herramientas_hay():
+    """El README decia 6 cuando ya eran 7. Un numero viejo en la portada de un
+    repositorio publico es lo primero que ve quien evalua."""
+    import re
+
+    from app.tools import TOOL_DEFS
+
+    n = len(TOOL_DEFS)
+    palabras = {6: "seis", 7: "siete", 8: "ocho", 9: "nueve", 10: "diez"}
+    raiz = Path(__file__).resolve().parents[1]
+    for nombre in ("README.md", "DECISIONES.md"):
+        texto = (raiz / nombre).read_text(encoding="utf-8")
+        for m in re.finditer(r"(\d+|seis|siete|ocho|nueve|diez)\s+herramientas", texto, re.I):
+            dicho = m.group(1).lower()
+            esperado = {str(n), palabras.get(n, "")}
+            assert dicho in esperado, (
+                f"{nombre} dice '{m.group(0)}' y hay {n} herramientas"
+            )

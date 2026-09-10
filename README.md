@@ -1,9 +1,25 @@
 # Agente de CV conversacional — Reto IA Banorte
 
 Agente que responde preguntas sobre el perfil profesional de **Edher Iván Díaz Salazar**
-(Analytics Engineer — Looker, BigQuery, Google Cloud). Habla el protocolo
+(Analytics Engineer e ingeniero de agentes de IA — agentes LLM y MCP sobre Google Cloud,
+con base en Looker, LookML y BigQuery). Habla el protocolo
 [Open Responses](https://www.openresponses.org/), corre en Cloud Run y está fundamentado
 en un CV estructurado: **no inventa datos y dice explícitamente cuándo algo no está en el CV.**
+
+**En vivo:** https://cv-agent-npnpuwxi2q-uc.a.run.app
+
+```bash
+# Está encendido ahora mismo. La tarjeta de agente es pública:
+curl https://cv-agent-npnpuwxi2q-uc.a.run.app/.well-known/agent-card.json
+```
+
+| | |
+|---|---|
+| Endpoint Open Responses | `POST /v1/responses` (requiere Bearer) |
+| Servidor MCP | `POST /mcp` |
+| Tarjeta de agente | `GET /.well-known/agent-card.json` (abierta) |
+| Salud | `GET /salud` — reporta el commit desplegado |
+| Pruebas | 178 offline · 45/45 en el conjunto dorado |
 
 ```
 Plataforma Reto IA ──POST /v1/responses (SSE)──►  Cloud Run · FastAPI
@@ -12,7 +28,7 @@ Cualquier agente   ──POST /mcp (streamable)────►        │
                     ┌───────────────────────────────────┼───────────────────────┐
                     ▼                                   ▼                       ▼
             Guardrail de entrada              Loop agéntico (Claude)      Telemetría
-         scope · inyección · tamaño        6 herramientas sobre cv.json   BigQuery +
+         scope · inyección · tamaño        7 herramientas sobre cv.json   BigQuery +
                                                         │                Cloud Logging
                                                         ▼                       │
                                             Guardrail de salida                 ▼
@@ -180,7 +196,7 @@ agregar latencia ni tumbar una respuesta al usuario.**
 ### 9. El mismo CV por dos protocolos
 
 Además del endpoint de Open Responses, el servicio expone un **servidor MCP** en `/mcp` con
-exactamente las mismas seis herramientas. Un solo despliegue atiende los dos protocolos.
+exactamente las mismas siete herramientas. Un solo despliegue atiende los dos protocolos.
 
 Esto no costó un rediseño, y esa es justo la prueba de que la separación estaba bien puesta:
 las herramientas viven en `tools.py` sin saber nada del transporte, así que agregar un protocolo
@@ -360,7 +376,7 @@ app/
   openresponses.py   Serialización del protocolo (no-streaming y SSE)
   agent.py           Loop agéntico con Claude
   mcp_server.py      Las mismas herramientas por MCP (HTTP montado + stdio)
-  tools.py           Seis herramientas sobre el CV + búsqueda
+  tools.py           Siete herramientas sobre el CV + búsqueda
   guardrails.py      Entrada (inyección, tamaño) y salida (PII, fundamentación)
   telemetry.py       Logging estructurado + sink de BigQuery
   config.py          Configuración por variables de entorno
