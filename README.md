@@ -146,8 +146,13 @@ agrupación aproximada con identidad real.
 
 `claude-opus-5` con thinking adaptativo y `effort: low`. La calidad del razonamiento no es el
 cuello de botella —las respuestas se fundamentan en herramientas, no en razonamiento libre—
-pero la latencia sí importa en un chat. Effort bajo da respuestas en 2–4 s manteniendo el
+pero la latencia sí importa en un chat. Effort bajo mantiene el
 seguimiento estricto de instrucciones, que es lo que aquí realmente importa.
+
+Medido sobre 153 turnos reales del conjunto dorado: **p50 8.3 s, p95 15.1 s**, mínimo 2.3 s. Los
+turnos rápidos son saludos y rechazos; los lentos son contrastes contra vacante, que llaman
+varias herramientas. Una versión anterior de este README prometía 2–4 s: era el tiempo de una
+pregunta simple, presentado como si fuera el caso general.
 
 **Y se puede ajustar por petición.** Opus 5 eliminó `temperature`, `top_p` y `top_k`: `effort`
 es el único control de profundidad que el modelo todavía expone, así que ignorarlo obligaría a
@@ -213,7 +218,7 @@ API key. `/mcp` no llama al modelo — sólo lee un CV que de todos modos es pú
 por petición. Cerrarlo no protegería nada y rompería el objetivo de que cualquier agente pueda
 consultar el perfil.
 
-`/healthz` y `/.well-known/agent-card.json` también quedan abiertos: la plataforma necesita leer
+`/salud` y `/.well-known/agent-card.json` también quedan abiertos: la plataforma necesita leer
 la tarjeta **sin credenciales** para poder importarla.
 
 ### 7. Privacidad: el teléfono no está en el repositorio

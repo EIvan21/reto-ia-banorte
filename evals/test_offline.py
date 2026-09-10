@@ -1849,3 +1849,32 @@ def test_no_se_aceptan_resultados_de_herramienta_del_cliente():
     ]})
     assert len(mensajes) == 1, mensajes
     assert "telefono" not in json.dumps(mensajes, ensure_ascii=False).lower()
+
+
+def test_la_documentacion_no_menciona_rutas_que_no_existen():
+    """El README decia /healthz, que no existe: Google intercepta esa ruta antes
+    de que llegue al contenedor y por eso el healthcheck se llama /salud."""
+    import re
+
+    from app.main import app
+
+    rutas = {r.path for r in app.routes if hasattr(r, "path")}
+    raiz = Path(__file__).resolve().parents[1]
+    for nombre in ("README.md", "DECISIONES.md"):
+        texto = (raiz / nombre).read_text(encoding="utf-8")
+        for m in re.finditer(r"`(/[a-z0-9._/-]+)`", texto):
+            ruta = m.group(1)
+            if ruta.startswith("/v1") or ruta.startswith("/mcp") or "." in ruta.split("/")[-1]:
+                continue
+            if ruta in ("/", "/docs", "/responses"):
+                continue
+            # /healthz se menciona a proposito: no existe justamente porque
+            # Google la reserva e intercepta antes del contenedor, y esa leccion
+            # esta documentada. La excepcion se gana -- si el texto que la
+            # explica desaparece, la prueba vuelve a marcarla.
+            if ruta == "/healthz":
+                assert "reservada" in texto, (
+                    f"{nombre} menciona /healthz sin explicar por que no existe"
+                )
+                continue
+            assert ruta in rutas, f"{nombre} menciona {ruta}, que no existe"
