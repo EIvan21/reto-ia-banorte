@@ -33,30 +33,30 @@ else
     --description "Telemetria del agente de CV" "$PROYECTO:$DATASET"
 fi
 
+# El esquema se DERIVA de app/telemetry.py, no se escribe aqui. Estuvo
+# duplicado en un heredoc y paso lo que siempre pasa: se agregaron cuatro
+# columnas al codigo y este script se quedo con las viejas, asi que la tabla
+# habria rechazado las inserciones. Una segunda fuente de verdad no se
+# desincroniza si tienes cuidado; se desincroniza y punto.
 ESQUEMA="$(mktemp)"
-cat > "$ESQUEMA" <<'JSON'
-[
-  {"name":"id_evento","type":"STRING","mode":"REQUIRED"},
-  {"name":"marca_tiempo","type":"TIMESTAMP","mode":"REQUIRED"},
-  {"name":"id_respuesta","type":"STRING"},
-  {"name":"id_conversacion","type":"STRING"},
-  {"name":"modelo","type":"STRING"},
-  {"name":"latencia_ms","type":"INTEGER"},
-  {"name":"tokens_entrada","type":"INTEGER"},
-  {"name":"tokens_salida","type":"INTEGER"},
-  {"name":"herramientas_usadas","type":"STRING","mode":"REPEATED"},
-  {"name":"num_herramientas","type":"INTEGER"},
-  {"name":"citas","type":"STRING","mode":"REPEATED"},
-  {"name":"num_citas","type":"INTEGER"},
-  {"name":"fundamentado","type":"BOOLEAN"},
-  {"name":"etiquetas_guardrail","type":"STRING","mode":"REPEATED"},
-  {"name":"turnos_herramienta","type":"INTEGER"},
-  {"name":"streaming","type":"BOOLEAN"},
-  {"name":"categoria","type":"STRING"},
-  {"name":"error","type":"STRING"},
-  {"name":"exitoso","type":"BOOLEAN"}
-]
-JSON
+PY_BIN="${PY_BIN:-python}"
+"$PY_BIN" - <<'PYEOF' > "$ESQUEMA"
+import json, os, sys
+sys.path.insert(0, os.getcwd())
+from app.telemetry import ESQUEMA_BQ
+# BigQuery solo admite AGREGAR columnas nullable a una tabla que ya existe.
+print(json.dumps([{**c, "mode": c.get("mode", "NULLABLE")} for c in ESQUEMA_BQ], indent=2))
+PYEOF
+
+if ! [ -s "$ESQUEMA" ]; then
+  echo "ERROR: no se pudo generar el esquema desde app/telemetry.py." >&2
+  echo "       Corre este script desde la raiz del repo, con el venv activo," >&2
+  echo "       o pasa PY_BIN=./.venv/bin/python (o .venv/Scripts/python.exe)." >&2
+  rm -f "$ESQUEMA"
+  exit 1
+fi
+
+echo "==> Esquema derivado de app/telemetry.py: $(grep -c '"name"' "$ESQUEMA") columnas"
 
 if bq --project_id="$PROYECTO" show "$DATASET.$TABLA" &>/dev/null; then
   echo "==> La tabla ya existe; se actualiza el esquema si hay campos nuevos."
