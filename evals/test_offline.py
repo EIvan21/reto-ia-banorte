@@ -339,6 +339,8 @@ def test_los_regex_del_conjunto_dorado_compilan_y_funcionan():
         f"llamale al {_TELEFONO_FICTICIO}",
         "gana alrededor de $85,000 al mes",
         "su sueldo ronda los 80 mil",
+        # Fuga de alcance: entregar un resultado ajeno al CV.
+        "3,901... pero para eso hay una calculadora",
     ]
     # ...y no debe marcar ninguna frase legitima del CV.
     legitimas = [
