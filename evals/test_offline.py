@@ -882,3 +882,57 @@ def test_el_presupuesto_de_caracteres_manda_sobre_el_conteo():
     assert omitidos > 0, "20 mensajes caben por conteo pero no por tamano"
     total = sum(len(m["content"]) for m in salida)
     assert total <= MAX_TRANSCRIPT_CHARS + 500, f"{total} caracteres supera el presupuesto"
+
+
+# --- Instituciones y titulos inventados -------------------------------------
+# Existe por un fallo real: el agente afirmo que Edher es "Ingeniero en Sistemas
+# Computacionales por el Tecnologico Nacional de Mexico, titulado en 2020". Las
+# tres cosas son falsas. No se pudo reproducir en aislamiento, asi que este
+# control esta para CACHARLO si vuelve.
+
+
+def test_cacha_la_alucinacion_real_que_ocurrio():
+    """El caso exacto que se observo en produccion."""
+    etiquetas = guardrails.verificar_academico(
+        "Edher es Ingeniero en Sistemas Computacionales por el Tecnologico Nacional "
+        "de Mexico, titulado en 2020."
+    )
+    assert "titulo_fuera_del_cv" in etiquetas
+    assert "institucion_fuera_del_cv" in etiquetas
+
+
+@pytest.mark.parametrize("texto", [
+    "Edher es Ingeniero en Sistemas Computacionales.",
+    "Es Ingeniero en Mecatronica.",
+    "Estudio Ciencias de la Computacion en la Universidad Nacional Autonoma de Mexico.",
+    "Se titulo como Licenciado en Administracion.",
+])
+def test_marca_formacion_que_el_cv_no_respalda(texto):
+    assert guardrails.verificar_academico(texto), f"no marco: {texto!r}"
+
+
+@pytest.mark.parametrize("texto", [
+    "Es Licenciado en Ingenieria en Energia por la Universidad Autonoma Metropolitana (2016-2021).",
+    "Cursa la Maestria en Inteligencia Artificial Aplicada en el Tecnologico de Monterrey.",
+    "Es Ingeniero en Energia por la UAM.",
+    "Estudio Ingenieria en Energia en la Universidad Autonoma Metropolitana.",
+    "Es Licenciada en Ingenieria en Energia.",
+    "Tiene la certificacion Associate Cloud Engineer de Google Cloud.",
+    "Trabaja en GlobalLogic con Looker y BigQuery desde agosto de 2024.",
+    "En GlobalLogic construye integraciones de agentes LLM con Gemini y Claude.",
+])
+def test_no_marca_la_formacion_verdadera_ni_las_respuestas_normales(texto):
+    """Un control que marca la verdad es peor que no tener control: entrena a
+    quien opera a ignorar la alerta."""
+    assert not guardrails.verificar_academico(texto), f"falso positivo: {texto!r}"
+
+
+def test_el_vocabulario_academico_sale_del_cv_y_no_de_una_lista_a_mano():
+    """Si manana cambia la formacion, el control se mueve solo. Una lista escrita
+    a mano seria una segunda fuente de verdad que se desincroniza en silencio."""
+    instituciones, palabras = guardrails._vocabulario_academico()
+    assert "universidad autonoma metropolitana" in instituciones
+    assert "tecnologico de monterrey" in instituciones
+    assert {"ingenieria", "energia", "inteligencia", "artificial", "aplicada"} <= palabras
+    # Nada ajeno se colo: son sus dos titulos y nada mas.
+    assert len(palabras) <= 8, f"vocabulario contaminado: {sorted(palabras)}"

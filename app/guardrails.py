@@ -10,9 +10,11 @@ agresivo rompe conversaciones legitimas, que es peor que el problema que evita.
 
 from __future__ import annotations
 
+import json
 import re
 import unicodedata
 from dataclasses import dataclass, field
+from functools import lru_cache
 
 from .config import MAX_INPUT_CHARS
 
@@ -154,6 +156,149 @@ def verificar_fundamento(texto: str, citas: list[str]) -> list[str]:
     if _SENALES_FACTUALES.search(texto or ""):
         return ["afirmacion_sin_fundamento"]
     return []
+
+
+# --- Instituciones y titulos inventados --------------------------------------
+#
+# Este control existe por un fallo real. En una conversacion de 36 turnos el
+# agente afirmo que Edher es "Ingeniero en Sistemas Computacionales por el
+# Tecnologico Nacional de Mexico, titulado en 2020". Las tres cosas son falsas:
+# es Ingenieria en Energia, por la UAM, y de 2021.
+#
+# Es la clase de invento mas dificil de notar y la mas cara: suena
+# perfectamente plausible para alguien con este perfil, un reclutador no tiene
+# como saber que esta mal, y es un dato que se verifica en un titulo. No pude
+# reproducirlo en aislamiento, asi que en vez de seguir persiguiendolo con el
+# prompt, aqui queda una red que lo CACHA cuando ocurra.
+#
+# Por que se puede hacer de forma determinista, cuando "detectar alucinaciones"
+# en general no se puede: los nombres de instituciones son sustantivos propios
+# con prefijos reconocibles ("Universidad X", "Instituto X", "Tecnologico X"),
+# y el conjunto valido para este CV es cerrado y pequeno. No detecta cualquier
+# invento; detecta este, que es el que duele.
+#
+# No bloquea, etiqueta. Bloquear una respuesta por una coincidencia de patron
+# rompe casos legitimos -- alguien pega una vacante que pide egresados del IPN y
+# el agente la cita al contrastar. La etiqueta viaja a telemetria, donde es
+# alertable, y la suite de evaluacion la convierte en asercion dura.
+
+_PREFIJOS_INSTITUCION = (
+    "universidad", "instituto", "tecnologico", "politecnico", "escuela superior",
+    "colegio", "university", "institute",
+)
+
+_PATRON_INSTITUCION = re.compile(
+    r"\b(?:Universidad|Instituto|Tecnologico|Tecnológico|Politecnico|Politécnico|"
+    r"Escuela Superior|University|Institute)\b(?:[ ]+(?:de|del|la|las|los|el|en|of|the|"
+    r"Nacional|Autonoma|Autónoma|Metropolitana|Estatal|Panamericana|Superior|"
+    r"[A-ZÁÉÍÓÚÑ][A-Za-záéíóúñ]+))+"
+)
+
+_PATRON_TITULO = re.compile(
+    r"\b(?:Ingenier(?:os?|as?|ia|ía)|Licenciad(?:o|a)|Licenciatura|Maestr(?:o|a|ia|ía)|"
+    r"Doctor(?:a|ado)?)\b[ ]+en[ ]+([A-Za-zÁÉÍÓÚÑáéíóúñ ]{3,45})"
+)
+
+
+# Conectores que el patron arrastra y que no dicen nada del campo de estudio.
+_CONECTORES_TITULO = {"en", "de", "del", "la", "el", "los", "las", "un", "una"}
+
+# Palabras donde TERMINA el campo de estudio y empieza otra cosa: la institucion
+# ("... en Energia POR LA Universidad ..."), o simplemente el resto de la frase.
+# Sin este corte, "Ingenieria en Energia por la Universidad Autonoma
+# Metropolitana" arrastraba el nombre de la universidad dentro del campo y la
+# verdad se marcaba como invento. La institucion tiene su propio control; aqui
+# solo se mira QUE estudio.
+_FIN_DE_CAMPO = {
+    "por", "y", "que", "con", "se", "su", "es", "para", "al", "desde", "donde",
+    "universidad", "instituto", "tecnologico", "politecnico", "escuela",
+    "university", "institute", "tec", "unam", "uam", "ipn", "itesm",
+    "titulado", "graduado", "egresado", "cursando", "actualmente",
+}
+
+
+# La captura se corta a 45 caracteres, asi que la palabra que marca el final
+# puede llegar partida ("... en el Tecnol"). Por eso el corte tambien se prueba
+# por raiz y en las dos direcciones.
+_RAICES_FIN = ("universid", "institut", "tecnolog", "politecnic", "escuel", "colegi")
+
+
+def _es_fin_de_campo(palabra: str) -> bool:
+    if palabra in _FIN_DE_CAMPO:
+        return True
+    return len(palabra) >= 5 and any(
+        palabra.startswith(r) or r.startswith(palabra) for r in _RAICES_FIN
+    )
+
+
+def _palabras_de_campo(campo: str) -> set[str]:
+    """Palabras de contenido del campo de estudio, hasta donde el campo termina."""
+    palabras: set[str] = set()
+    for p in _sin_acentos(campo).lower().split():
+        if _es_fin_de_campo(p):
+            break
+        if p not in _CONECTORES_TITULO:
+            palabras.add(p)
+    return palabras
+
+
+@lru_cache(maxsize=1)
+def _vocabulario_academico() -> tuple[frozenset[str], frozenset[str]]:
+    """Instituciones y campos de titulo que SI aparecen en el CV.
+
+    Se derivan del CV, no se escriben a mano: si manana cambia la formacion, este
+    control se mueve solo. Escribirlas a mano seria una segunda fuente de verdad
+    que se desincroniza en silencio, que es como empiezan estos fallos.
+    """
+    from .config import load_cv
+
+    texto = _sin_acentos(json.dumps(load_cv(), ensure_ascii=False)).lower()
+
+    instituciones = {
+        _sin_acentos(m.group(0)).lower() for m in _PATRON_INSTITUCION.finditer(
+            json.dumps(load_cv(), ensure_ascii=False)
+        )
+    }
+    # Las siglas y nombres cortos no traen prefijo, asi que se agregan por presencia.
+    for sigla in ("uam", "unam", "ipn", "itesm", "tec de monterrey", "anahuac", "ibero"):
+        if sigla in texto:
+            instituciones.add(sigla)
+
+    # Para los campos de titulo no se comparan cadenas sino PALABRAS. El patron
+    # captura de mas ("Energia por la UAM", "Energia y muestra que..."), asi que
+    # comparar la frase completa marcaba parafraseos legitimos. Lo que de verdad
+    # delata un titulo inventado es una palabra ajena -- "Sistemas",
+    # "Computacionales" -- no el orden de las que si estan.
+    palabras: set[str] = set()
+    for m in _PATRON_TITULO.finditer(json.dumps(load_cv(), ensure_ascii=False)):
+        palabras |= _palabras_de_campo(m.group(1))
+    return frozenset(instituciones), frozenset(palabras)
+
+
+def verificar_academico(texto: str) -> list[str]:
+    """Marca instituciones o campos de titulo que el CV no respalda.
+
+    Devuelve etiquetas para telemetria; nunca modifica ni bloquea la respuesta.
+    """
+    if not texto:
+        return []
+
+    instituciones_cv, campos_cv = _vocabulario_academico()
+    etiquetas: list[str] = []
+
+    for m in _PATRON_INSTITUCION.finditer(texto):
+        nombre = _sin_acentos(m.group(0)).strip().lower()
+        if not any(nombre == v or nombre in v or v in nombre for v in instituciones_cv):
+            etiquetas.append("institucion_fuera_del_cv")
+            break
+
+    for m in _PATRON_TITULO.finditer(texto):
+        ajenas = _palabras_de_campo(m.group(1)) - campos_cv
+        if ajenas:
+            etiquetas.append("titulo_fuera_del_cv")
+            break
+
+    return etiquetas
 
 
 # --- Politicas por tema sensible --------------------------------------------

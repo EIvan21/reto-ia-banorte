@@ -331,6 +331,7 @@ def _stream_agente(
     etiquetas: list[str] = list(etiquetas_politica or [])
     if resumen is not None:
         etiquetas += guardrails.verificar_fundamento(resumen.texto, resumen.citas)
+        etiquetas += guardrails.verificar_academico(resumen.texto)
 
     yield from emisor.fin(
         resumen.tokens_entrada if resumen else 0,
@@ -376,7 +377,8 @@ def _responder_completo(
     texto = resumen.texto if resumen else ""
     texto, etiquetas_pii = guardrails.redactar_pii(texto)
     etiquetas = (list(etiquetas_politica or []) + etiquetas_pii
-                 + guardrails.verificar_fundamento(texto, resumen.citas if resumen else []))
+                 + guardrails.verificar_fundamento(texto, resumen.citas if resumen else [])
+                 + guardrails.verificar_academico(texto))
 
     registrar_turno(
         id_respuesta=id_respuesta,
