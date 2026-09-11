@@ -107,6 +107,8 @@ curl -N -X POST http://localhost:8080/v1/responses \
 
 Para desplegar, registrar en la plataforma y operar: **[docs/OPERACION.md](docs/OPERACION.md)**.
 
+Para conectar el CV como servidor MCP desde cualquier cliente: **[docs/CONECTAR-MCP.md](docs/CONECTAR-MCP.md)**.
+
 ---
 
 ## Siguiente iteración
