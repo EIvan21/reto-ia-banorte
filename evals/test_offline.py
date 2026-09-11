@@ -2051,3 +2051,47 @@ def test_todos_los_lugares_que_anuncian_el_numero_de_pruebas_coinciden():
         assert m, f"{nombre} ya no anuncia el numero de pruebas"
         cifras[nombre] = int(m.group(1))
     assert len(set(cifras.values())) == 1, f"cifras distintas: {cifras}"
+
+
+# --- Etiquetas de cita que se escapan al texto visible ----------------------
+# El modelo a veces emite <cite index="..."> en la prosa. No las pide el prompt
+# y nada las limpiaba, asi que salian al chat como markup crudo. Es
+# intermitente, lo cual la hace peor: se ve una vez de cada tantas y quien lo
+# reporta no puede reproducirlo.
+
+
+@pytest.mark.parametrize("entrada,esperado", [
+    ('Mucha. <cite index="hab-bi">Looker a diario</cite> en tres empleos.',
+     "Mucha. Looker a diario en tres empleos."),
+    ("<cite>algo</cite> al inicio", "algo al inicio"),
+    ('<CITE INDEX="x">mayusculas</CITE>', "mayusculas"),
+    ("Sin etiquetas, texto normal.", "Sin etiquetas, texto normal."),
+    ("", ""),
+])
+def test_las_etiquetas_de_cita_no_llegan_al_texto_visible(entrada, esperado):
+    salida, _ = guardrails.redactar_pii(entrada)
+    assert salida == esperado
+
+
+def test_el_texto_de_adentro_de_la_cita_se_conserva():
+    """Se quita el markup, no el contenido: lo que envuelve la etiqueta es
+    respuesta real. La fundamentacion viaja en _citas, no en la prosa."""
+    salida, _ = guardrails.redactar_pii(
+        'Trabaja con <cite index="exp-globallogic">Looker desde 2021</cite>.'
+    )
+    assert "Looker desde 2021" in salida
+    assert "cite" not in salida.lower()
+
+
+def test_una_cita_partida_entre_deltas_tampoco_se_escapa():
+    """En streaming la etiqueta puede llegar en dos pedazos."""
+    redactor = guardrails.RedactorDeFlujo()
+    trozos = []
+    for delta in ['Mucha. <cite in', 'dex="hab-bi">Looker</ci', "te> y mas, con anios de experiencia documentada."]:
+        emitido = redactor.empujar(delta)
+        if emitido:
+            trozos.append(emitido)
+    trozos.append(redactor.cerrar())
+    texto = "".join(trozos)
+    assert "cite" not in texto.lower(), texto
+    assert "Looker" in texto

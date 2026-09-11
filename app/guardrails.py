@@ -187,11 +187,23 @@ def _redactar_fragmento(texto: str, etiquetas: list[str]) -> str:
     return resultado
 
 
+# El modelo a veces emite etiquetas de cita en la prosa. No las pide el prompt, y
+# sin limpiarlas salen al chat como markup crudo. La fundamentacion real viaja en
+# el campo _citas de las herramientas, no dentro del texto.
+_ETIQUETA_CITA = re.compile(r"</?cite\b[^>]*>", re.I)
+
+
+def limpiar_markup(texto: str) -> str:
+    """Quita etiquetas de cita conservando el texto que envuelven."""
+    return _ETIQUETA_CITA.sub("", texto or "")
+
+
 def redactar_pii(texto: str) -> tuple[str, list[str]]:
     """Redacta datos personales que no deben salir. Devuelve (texto, etiquetas).
 
     Se redacta el texto normal y se dejan intactas las URLs.
     """
+    texto = limpiar_markup(texto)
     etiquetas: list[str] = []
     piezas: list[str] = []
     fin_anterior = 0
