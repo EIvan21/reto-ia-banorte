@@ -106,6 +106,9 @@
         "Agentes LLM (Gemini, Claude Code, Codex, Cursor)",
         "MCP (Model Context Protocol): construccion de servidores y herramientas",
         "Diseno de skills y flujos entre agentes",
+        "Busqueda lexica con IDF y expansion de consulta",
+        "Evaluacion de recuperacion (recall@k, MRR)",
+        "RAG y sistemas de recuperacion",
         "Ingenieria de prompts",
         "Guardrails de entrada y salida",
         "Evaluacion automatizada de agentes",
@@ -115,7 +118,8 @@
         "Jupyter",
         "Git"
       ],
-      "contexto": "Es el nucleo de su trabajo actual y la direccion que quiere de tiempo completo. En GlobalLogic construye integraciones de agentes LLM y frameworks de prompts que generan y refactorizan LookML. Fuera del empleo ha construido tres sistemas agenticos completos: dos skills de agente publicadas en looker-open-source de Google, un sistema multiagente de generacion de video con roles especializados y revision automatica, y el agente conversacional de este CV, con servidor MCP, guardrails, suite de evaluacion y telemetria propia."
+      "contexto": "Es el nucleo de su trabajo actual y la direccion que quiere de tiempo completo. En GlobalLogic construye integraciones de agentes LLM y frameworks de prompts que generan y refactorizan LookML. Fuera del empleo ha construido tres sistemas agenticos completos: dos skills de agente publicadas en looker-open-source de Google, un sistema multiagente de generacion de video con roles especializados y revision automatica, y el agente conversacional de este CV, con servidor MCP, guardrails, suite de evaluacion y telemetria propia.",
+      "nota_sobre_rag": "Su experiencia en RAG es de construir y MEDIR el sistema, no de conectar una libreria. En el agente de CV implemento la recuperacion desde cero, escribio el banco de evaluacion que la mide, y descarto la busqueda vectorial con numeros en la mano -- documentando ademas bajo que condicion esa decision cambiaria. Conoce las piezas que no uso y por que: BM25, embeddings y similitud coseno, reranking con cross-encoder, busqueda hibrida y estrategias de chunking."
     }
   ],
   "experiencia": [
@@ -299,11 +303,21 @@
         "FastAPI",
         "Claude",
         "Open Responses",
+        "MCP",
+        "RAG",
+        "Recuperacion lexica con IDF",
+        "Evaluacion de recuperacion (recall@k, MRR)",
+        "Guardrails",
         "Cloud Run",
         "BigQuery",
+        "Cloud Storage",
         "Docker"
       ],
-      "publico": true
+      "publico": true,
+      "arquitectura_de_recuperacion": "Es un sistema RAG: recupera de un corpus y genera respuestas fundamentadas, con citas rastreables a la entrada exacta que las sustenta. La recuperacion es lexica -- indice sobre 30 entradas, ponderacion IDF, normalizacion por longitud, expansion de consulta con grupos de sinonimos bidireccionales y lista de palabras vacias -- y devuelve los 8 mejores candidatos por consulta. El modelo nunca ve el CV completo: solo lo que la herramienta le entrega.",
+      "por_que_lexica_y_no_vectorial": "Porque se midio, no porque se supusiera. El repositorio incluye evals/medir_corpus.py, que evalua la recuperacion con un banco de 24 preguntas partido en dos grupos: las que comparten vocabulario con el corpus y las que preguntan lo mismo con otras palabras -- que es donde una busqueda vectorial deberia ganar. Resultados: recall@3 de 92% contra 83%, y MRR de 0.68 contra 0.67. La brecha es de 0.01. Los vectores mejorarian el orden, no la cobertura, y como el modelo recibe 8 candidatos y escoge, ese error de orden no llega al usuario. Queda documentado que cambiaria la decision: bajar k, o que el corpus crezca a un punto donde 8 candidatos no lo cubran.",
+      "como_escalaria": "A escala empresarial el diseno cambia y esta razonado: recuperacion hibrida BM25 mas embeddings con un reranker encima, chunking con metadatos y control de acceso por documento, y el mismo script de medicion como criterio de cuando cada pieza se justifica.",
+      "evaluacion": "Suite de evaluacion de dos capas. 276 pruebas offline que corren sin API key en dos segundos, y un conjunto dorado de 45 casos contra el modelo real que afirma no solo el texto de la respuesta sino QUE HERRAMIENTA se llamo y QUE ENTRADAS se citaron -- que es lo que de verdad se evalua en un sistema de recuperacion. Incluye 12 casos de seguridad y 8 adversariales."
     },
     {
       "id": "proy-video-multiagente",
