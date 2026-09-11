@@ -76,7 +76,7 @@ alternativas que se descartaron.
 
 ## Cómo se verifica
 
-- **276 pruebas offline** — recuperación, guardrails, protocolo, imágenes, streaming. Corren en
+- **279 pruebas offline** — recuperación, guardrails, protocolo, imágenes, streaming. Corren en
   CI en cada push, en ~2 s y sin API key.
 - **45/45 en el conjunto dorado** — casos contra el modelo real, con aserciones sobre qué
   herramienta se usó y qué se citó. Se corre a mano antes de desplegar.

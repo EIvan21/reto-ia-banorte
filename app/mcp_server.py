@@ -35,7 +35,8 @@ from .config import AGENT_VERSION, PUBLIC_BASE_URL, load_cv
 
 INSTRUCCIONES = """\
 Estas herramientas consultan el CV estructurado de Edher Ivan Diaz Salazar,
-Analytics Engineer especializado en Looker, BigQuery y Google Cloud.
+ingeniero mexicano que construye agentes de IA sobre Google Cloud, con base en
+Analytics Engineering (Looker, LookML, BigQuery).
 
 Toda respuesta sobre su perfil debe apoyarse en lo que devuelvan estas herramientas.
 Cada resultado incluye "_citas" con los ids de las entradas del CV que lo respaldan.

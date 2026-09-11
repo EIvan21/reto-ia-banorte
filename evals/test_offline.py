@@ -2147,3 +2147,35 @@ def test_las_senales_factuales_no_marcan_un_saludo():
 def test_una_afirmacion_sin_citas_si_se_marca(texto):
     """Quitar los nombres de tecnologia no puede debilitar el control."""
     assert guardrails.verificar_fundamento(texto, []) == ["afirmacion_sin_fundamento"]
+
+
+def test_uvicorn_confia_en_las_cabeceras_del_proxy():
+    """Cloud Run termina el TLS y pasa la peticion por http. Sin --proxy-headers
+    uvicorn cree que sirve http y construye redirecciones con ese esquema: /mcp
+    redirigia a http://, que degrada el protocolo y rompe clientes estrictos."""
+    dockerfile = (Path(__file__).resolve().parents[1] / "Dockerfile").read_text(encoding="utf-8")
+    assert "--proxy-headers" in dockerfile
+    assert "--forwarded-allow-ips" in dockerfile
+
+
+def test_el_servidor_mcp_expone_seis_de_las_siete_herramientas():
+    """La septima, generar_reporte, escribe en un bucket. Exponer una operacion
+    con efecto secundario en un endpoint sin autenticar es dar de alta un
+    servicio de escritura anonimo."""
+    fuente = (Path(__file__).resolve().parents[1] / "app" / "mcp_server.py").read_text(
+        encoding="utf-8"
+    )
+    from app.tools import TOOL_DEFS
+
+    expuestas = {t["name"] for t in TOOL_DEFS if f'"{t["name"]}"' in fuente}
+    assert len(expuestas) == 6, f"expone {len(expuestas)}: {sorted(expuestas)}"
+    assert "generar_reporte" not in expuestas
+
+
+def test_las_instrucciones_del_mcp_coinciden_con_el_perfil_actual():
+    """El servidor anuncia quien es Edher a cualquier agente que se conecte. Si
+    se queda con un posicionamiento viejo, dos fuentes dicen cosas distintas."""
+    fuente = (Path(__file__).resolve().parents[1] / "app" / "mcp_server.py").read_text(
+        encoding="utf-8"
+    )
+    assert "agentes de IA" in fuente, "las instrucciones del MCP traen el perfil viejo"

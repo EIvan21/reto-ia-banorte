@@ -25,4 +25,9 @@ EXPOSE 8080
 # modelo), asi que la concurrencia sale de atender esas esperas en paralelo y
 # no de levantar mas procesos. El trabajo bloqueante -- el cliente sincrono de
 # Anthropic -- se manda a un threadpool para no detener el event loop.
-CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --workers 1 --timeout-keep-alive 65
+# --proxy-headers y --forwarded-allow-ips: Cloud Run termina el TLS y le pasa
+# la peticion al contenedor por http. Sin esto uvicorn cree que sirve http y
+# construye las redirecciones con ese esquema -- /mcp redirigia a http://,
+# que es una degradacion de protocolo y rompe a los clientes estrictos.
+CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --workers 1 \
+    --timeout-keep-alive 65 --proxy-headers --forwarded-allow-ips='*'
