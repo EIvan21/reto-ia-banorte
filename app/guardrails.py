@@ -218,9 +218,18 @@ def redactar_pii(texto: str) -> tuple[str, list[str]]:
 
 
 # Senales de que la respuesta afirma hechos concretos del CV.
+# Senales de que la respuesta afirma hechos que SOLO pueden venir de una
+# herramienta: nombres de empleador, metricas concretas, credenciales.
+#
+# No incluye nombres de tecnologia -- Looker, LookML, BigQuery -- a proposito.
+# El agente los dice al presentarse, porque estan en su linea de identidad
+# dentro del prompt, y un saludo no llama herramientas. Tenerlos aqui hacia que
+# cada saludo saliera etiquetado como afirmacion sin fundamento, y un falso
+# positivo en una alerta es peor que no tener la alerta.
 _SENALES_FACTUALES = re.compile(
-    r"\b(GlobalLogic|GTEC|Infosys|Looker|LookML|BigQuery|Tecnologico de Monterrey|"
-    r"Associate Cloud Engineer|30%|40%|4\.5/5|400\+?)\b",
+    r"\b(GlobalLogic|GTEC|Infosys|Tecnologico de Monterrey|Universidad Autonoma|"
+    r"Associate Cloud Engineer|Generative AI Leader|Medalla al Merito|"
+    r"30%|40%|4\.5/5|400\+?)\b",
     re.I,
 )
 

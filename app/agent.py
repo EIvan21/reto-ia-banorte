@@ -311,7 +311,12 @@ def _herramientas() -> list[dict]:
     return definiciones
 
 
-def _construir_kwargs(mensajes: list[dict], sistema: list[dict], effort: str = "") -> dict:
+def _construir_kwargs(
+    mensajes: list[dict],
+    sistema: list[dict],
+    effort: str = "",
+    contenedor: str = "",
+) -> dict:
     kwargs: dict = {
         "model": MODEL,
         "max_tokens": MAX_TOKENS,
@@ -320,6 +325,11 @@ def _construir_kwargs(mensajes: list[dict], sistema: list[dict], effort: str = "
         "tools": _herramientas(),
         "output_config": {"effort": effort or EFFORT},
     }
+    if contenedor:
+        # Las herramientas del lado del servidor corren en un contenedor remoto.
+        # web_fetch arrastra a code_execution, y esa exige que las llamadas
+        # siguientes del mismo turno referencien el contenedor que ya se creo.
+        kwargs["container"] = contenedor
     if _fallbacks_activos:
         # Si el modelo declina por politica, la API reintenta el mismo request en
         # un modelo de respaldo dentro de la misma llamada, sin que el usuario vea
@@ -430,10 +440,12 @@ def responder(
     historial = _con_punto_de_cache(list(mensajes))
     # Firmas de las llamadas ya hechas en este turno, para no repetirlas.
     llamadas_vistas: set[str] = set()
+    # Contenedor de las herramientas de servidor, si la API levanta uno.
+    contenedor = ""
 
     try:
         for turno in range(MAX_TOOL_TURNS):
-            kwargs = _construir_kwargs(historial, sistema, effort)
+            kwargs = _construir_kwargs(historial, sistema, effort, contenedor)
 
             try:
                 flujo = cliente.beta.messages.stream(**kwargs)
@@ -442,13 +454,19 @@ def responder(
                 # para todo el proceso y se reintenta sin el.
                 _fallbacks_activos = False
                 registrar("fallbacks_desactivados", motivo="sdk_sin_soporte")
-                flujo = cliente.beta.messages.stream(**_construir_kwargs(historial, sistema, effort))
+                flujo = cliente.beta.messages.stream(
+                    **_construir_kwargs(historial, sistema, effort, contenedor)
+                )
 
             with flujo as stream:
                 for evento in stream:
                     if evento.type == "content_block_delta" and evento.delta.type == "text_delta":
                         yield ("delta", evento.delta.text)
                 mensaje = stream.get_final_message()
+
+            recipiente = getattr(mensaje, "container", None)
+            if recipiente is not None and getattr(recipiente, "id", None):
+                contenedor = recipiente.id
 
             resumen.tokens_entrada += mensaje.usage.input_tokens or 0
             resumen.tokens_salida += mensaje.usage.output_tokens or 0
