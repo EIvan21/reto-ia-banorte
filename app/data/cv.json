@@ -106,6 +106,11 @@
         "Agentes LLM (Gemini, Claude Code, Codex, Cursor)",
         "MCP (Model Context Protocol): construccion de servidores y herramientas",
         "Diseno de skills y flujos entre agentes",
+        "Loop agentico y tool use (ciclo de llamada a herramientas)",
+        "Manejo de ventana de contexto y presupuesto de tokens",
+        "Prompt caching (reduccion medida de 77-95% del contexto reenviado)",
+        "Streaming por SSE y protocolo Open Responses",
+        "Orquestacion multiagente con roles y revision automatica",
         "Busqueda lexica con IDF y expansion de consulta",
         "Evaluacion de recuperacion (recall@k, MRR)",
         "RAG y sistemas de recuperacion",
@@ -119,7 +124,10 @@
         "Git"
       ],
       "contexto": "Es el nucleo de su trabajo actual y la direccion que quiere de tiempo completo. En GlobalLogic construye integraciones de agentes LLM y frameworks de prompts que generan y refactorizan LookML. Fuera del empleo ha construido tres sistemas agenticos completos: dos skills de agente publicadas en looker-open-source de Google, un sistema multiagente de generacion de video con roles especializados y revision automatica, y el agente conversacional de este CV, con servidor MCP, guardrails, suite de evaluacion y telemetria propia.",
-      "nota_sobre_rag": "Su experiencia en RAG es de construir y MEDIR el sistema, no de conectar una libreria. En el agente de CV implemento la recuperacion desde cero, escribio el banco de evaluacion que la mide, y descarto la busqueda vectorial con numeros en la mano -- documentando ademas bajo que condicion esa decision cambiaria. Conoce las piezas que no uso y por que: BM25, embeddings y similitud coseno, reranking con cross-encoder, busqueda hibrida y estrategias de chunking."
+      "nota_sobre_rag": "Su experiencia en RAG es de construir y MEDIR el sistema, no de conectar una libreria. En el agente de CV implemento la recuperacion desde cero, escribio el banco de evaluacion que la mide, y descarto la busqueda vectorial con numeros en la mano -- documentando ademas bajo que condicion esa decision cambiaria. Conoce las piezas que no uso y por que: BM25, embeddings y similitud coseno, reranking con cross-encoder, busqueda hibrida y estrategias de chunking.",
+      "mecanica_de_agentes": "No trabaja los agentes como caja negra: implemento las piezas. El loop agentico esta escrito a mano y no con el tool runner del SDK, porque hacian falta dos cosas que el runner esconde -- emitir texto al cliente MIENTRAS corre el loop, y contabilizar herramientas, citas y tokens por turno para telemetria. El loop maneja los cuatro estados de parada del modelo, corta bucles de llamadas repetidas con una firma de nombre mas argumentos, y tiene tope de vueltas. La ventana de conversacion se acota por mensajes y por caracteres, y al recortar deja un aviso explicito en el hueco en vez de empalmar en silencio. El cache va en dos puntos -- el prefijo estable y el final del historial -- con un ahorro medido de entre 77% y 95% de la entrada a partir del segundo turno.",
+      "flujos_de_datos_y_mcp": "Los servidores MCP que construye exponen herramientas con esquema JSON estricto, y en el agente de CV el mismo conjunto de herramientas se sirve por dos protocolos -- Open Responses y MCP -- desde un solo despliegue. Eso es posible porque la logica de negocio no sabe nada del transporte: agregar el segundo protocolo fue un archivo, no un rediseno. Del lado de datos, los flujos que ha construido van de ingesta con Dataflow hacia BigQuery hasta la capa semantica en LookML y la telemetria de agentes, que es justamente lo que monitorea el Agent Analytics Block.",
+      "skills_de_agente": "Una skill de agente empaqueta instrucciones, herramientas y criterios para que un agente resuelva una tarea concreta de forma repetible. Tiene dos publicadas en looker-open-source de Google, como autor principal: Looker Architect, que genera el andamiaje de proyectos LookML, y Looker Performance Optimizer, que genera y refactoriza LookML orientado a desempeno recorriendo las capas donde puede estar el problema -- la interfaz, el LookML, o el SQL contra la base."
     }
   ],
   "experiencia": [
