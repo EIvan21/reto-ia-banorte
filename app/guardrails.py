@@ -404,6 +404,34 @@ def _palabras_de_campo(campo: str) -> set[str]:
     return palabras
 
 
+# Equivalencias entre una sigla y las palabras que la forman, cuando esas
+# palabras si estan en el CV. Solo cubre lo bilingue, que el orden de iniciales
+# no alcanza a producir.
+_SIGLAS_EQUIVALENTES = {
+    ("inteligencia", "artificial"): {"ia", "ai"},
+}
+
+
+def _siglas_de(campo: str) -> set[str]:
+    """Siglas que se forman con las palabras de un campo de titulo."""
+    palabras = [
+        p for p in _sin_acentos(campo).lower().split()
+        if not _es_fin_de_campo(p) and p not in _CONECTORES_TITULO
+    ]
+    fuera: set[str] = set()
+
+    # Iniciales de cada prefijo de dos o mas palabras: "inteligencia artificial
+    # aplicada" da "ia" y "iaa".
+    for n in range(2, len(palabras) + 1):
+        fuera.add("".join(p[0] for p in palabras[:n]))
+
+    for claves, equivalentes in _SIGLAS_EQUIVALENTES.items():
+        if all(c in palabras for c in claves):
+            fuera |= equivalentes
+
+    return fuera
+
+
 @lru_cache(maxsize=1)
 def _vocabulario_academico() -> tuple[frozenset[str], frozenset[str]]:
     """Instituciones y campos de titulo que SI aparecen en el CV.
@@ -432,9 +460,18 @@ def _vocabulario_academico() -> tuple[frozenset[str], frozenset[str]]:
     # delata un titulo inventado es una palabra ajena -- "Sistemas",
     # "Computacionales" -- no el orden de las que si estan.
     palabras: set[str] = set()
+    siglas: set[str] = set()
     for m in _PATRON_TITULO.finditer(json.dumps(load_cv(), ensure_ascii=False)):
-        palabras |= _palabras_de_campo(m.group(1))
-    return frozenset(instituciones), frozenset(palabras)
+        campo = _palabras_de_campo(m.group(1))
+        palabras |= campo
+        siglas |= _siglas_de(m.group(1))
+
+    # Las siglas se derivan del CV igual que las palabras, no se escriben a
+    # mano: "Inteligencia Artificial Aplicada" produce "ia" y "iaa". Sin esto,
+    # "Maestria en IA Aplicada" -- que es como lo abrevia cualquiera -- se
+    # marcaba como titulo inventado. Paso dos veces en produccion, sobre
+    # respuestas correctas.
+    return frozenset(instituciones), frozenset(palabras | siglas)
 
 
 def verificar_academico(texto: str) -> list[str]:

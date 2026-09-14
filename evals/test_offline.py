@@ -935,8 +935,19 @@ def test_el_vocabulario_academico_sale_del_cv_y_no_de_una_lista_a_mano():
     assert "universidad autonoma metropolitana" in instituciones
     assert "tecnologico de monterrey" in instituciones
     assert {"ingenieria", "energia", "inteligencia", "artificial", "aplicada"} <= palabras
-    # Nada ajeno se colo: son sus dos titulos y nada mas.
-    assert len(palabras) <= 8, f"vocabulario contaminado: {sorted(palabras)}"
+
+    # Las siglas tambien se derivan del CV: "Inteligencia Artificial Aplicada"
+    # produce "ia". Sin ellas, "Maestria en IA Aplicada" -- como lo abrevia
+    # cualquiera -- se marcaba como titulo inventado, y eso paso dos veces en
+    # produccion sobre respuestas correctas.
+    assert {"ia", "ai"} <= palabras
+
+    # Nada ajeno se colo. Lo que hay son las palabras de sus dos titulos y las
+    # siglas que se forman con ellas, que son cortas por construccion.
+    largas = {p for p in palabras if len(p) > 4}
+    assert largas <= {"ingenieria", "energia", "inteligencia", "artificial", "aplicada"}, (
+        f"vocabulario contaminado: {sorted(largas)}"
+    )
 
 
 # --- Identidad y agrupacion de conversaciones -------------------------------
@@ -2206,3 +2217,24 @@ def test_salud_dice_si_la_telemetria_esta_encendida():
     from app.main import app
 
     assert "telemetria_bigquery" in TestClient(app).get("/salud").json()
+
+
+@pytest.mark.parametrize("texto", [
+    "Cursa la Maestria en IA Aplicada en el Tec de Monterrey.",
+    "Tiene una maestria en AI Aplicada en curso.",
+    "Estudia la Maestria en Inteligencia Artificial Aplicada.",
+])
+def test_abreviar_el_titulo_no_lo_convierte_en_invento(texto):
+    """El CV dice "Inteligencia Artificial Aplicada" y el agente abrevia a "IA
+    Aplicada", que es correcto. El control lo marcaba como titulo inventado, y
+    disparo dos veces en produccion sobre respuestas bien fundamentadas."""
+    assert guardrails.verificar_academico(texto) == [], texto
+
+
+@pytest.mark.parametrize("texto", [
+    "Es Ingeniero en Mecatronica.",
+    "Maestria en Ciencia de Datos.",
+    "Es Licenciado en Administracion.",
+])
+def test_aceptar_siglas_no_debilita_el_control(texto):
+    assert "titulo_fuera_del_cv" in guardrails.verificar_academico(texto), texto
