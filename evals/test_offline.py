@@ -2179,3 +2179,30 @@ def test_las_instrucciones_del_mcp_coinciden_con_el_perfil_actual():
         encoding="utf-8"
     )
     assert "agentes de IA" in fuente, "las instrucciones del MCP traen el perfil viejo"
+
+
+# --- La telemetria no puede apagarse sola -----------------------------------
+# deploy.sh tomaba BQ_PROJECT y BQ_DATASET del shell con un defecto VACIO, asi
+# que desplegar sin exportarlas -- o sea siempre -- publicaba el servicio con la
+# telemetria desactivada. Y apagada no falla: el sink ni lo intenta, asi que no
+# hay errores en los logs. Estuvo cuatro dias muerta sin que nada avisara.
+
+
+def test_el_despliegue_no_manda_un_destino_de_telemetria_vacio():
+    guion = (Path(__file__).resolve().parents[1] / "scripts" / "deploy.sh").read_text(
+        encoding="utf-8"
+    )
+    assert "BQ_PROJECT=${BQ_PROJECT:-}" not in guion, "defecto vacio: apaga la telemetria"
+    assert "BQ_DATASET=${BQ_DATASET:-}" not in guion, "defecto vacio: apaga la telemetria"
+    assert 'BQ_PROJECT="${BQ_PROJECT:-$PROYECTO}"' in guion
+    assert 'BQ_DATASET="${BQ_DATASET:-cv_agent}"' in guion
+
+
+def test_salud_dice_si_la_telemetria_esta_encendida():
+    """Apagada no deja rastro en los logs. Tiene que verse desde fuera o no se
+    nota que murio."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    assert "telemetria_bigquery" in TestClient(app).get("/salud").json()

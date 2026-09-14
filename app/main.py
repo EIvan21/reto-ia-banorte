@@ -33,6 +33,7 @@ from .config import (
     MAX_TURNS_IN_TRANSCRIPT,
     MODEL,
     PUBLIC_BASE_URL,
+    TELEMETRY_ENABLED,
     load_cv,
 )
 from .telemetry import registrar, registrar_error, registrar_turno, vaciar
@@ -727,6 +728,9 @@ async def salud():
             "commit": GIT_SHA,
             "revision": CLOUD_RUN_REVISION,
             "construido_desde_arbol_limpio": GIT_LIMPIO,
+            # Apagada no falla: el sink ni lo intenta, asi que no aparece en los
+            # logs. Tiene que verse desde fuera o no se nota que murio.
+            "telemetria_bigquery": TELEMETRY_ENABLED,
             "cv_version": cv["_meta"]["version"],
             "entradas_cv": {
                 "experiencia": len(cv["experiencia"]),

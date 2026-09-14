@@ -221,6 +221,15 @@ if [[ -n "$URL" ]]; then
   echo "==> URL:       $URL (ya conocida)"
 fi
 
+# Destino de la telemetria. Antes esto tomaba el valor del shell con un defecto
+# VACIO, asi que quien desplegara sin exportar las variables -- o sea siempre --
+# publicaba el servicio con la telemetria apagada. Y apagada no falla: el sink ni
+# lo intenta, asi que no hay errores en los logs. Estuvo cuatro dias muerta sin
+# que nada avisara.
+BQ_PROJECT="${BQ_PROJECT:-$PROYECTO}"
+BQ_DATASET="${BQ_DATASET:-cv_agent}"
+echo "==> Telemetria: ${BQ_PROJECT}.${BQ_DATASET}"
+
 echo "==> Desplegando (build remoto con Cloud Build)..."
 gcloud run deploy "$SERVICIO" \
   --source . \
@@ -238,7 +247,7 @@ gcloud run deploy "$SERVICIO" \
   --min-instances "$MIN_INSTANCIAS" \
   --max-instances "$MAX_INSTANCIAS" \
   --set-secrets "ANTHROPIC_API_KEY=${SECRETO}:latest,AGENT_API_KEY=${SECRETO_AGENTE}:latest" \
-  --set-env-vars "MODEL=claude-opus-5,EFFORT=low,BQ_PROJECT=${BQ_PROJECT:-},BQ_DATASET=${BQ_DATASET:-},REPORTES_BUCKET=${BUCKET_REPORTES},GIT_SHA=${GIT_SHA},GIT_BUILD=${GIT_BUILD},GIT_LIMPIO=${GIT_LIMPIO}${VARS_URL}" \
+  --set-env-vars "MODEL=claude-opus-5,EFFORT=low,BQ_PROJECT=${BQ_PROJECT},BQ_DATASET=${BQ_DATASET},REPORTES_BUCKET=${BUCKET_REPORTES},GIT_SHA=${GIT_SHA},GIT_BUILD=${GIT_BUILD},GIT_LIMPIO=${GIT_LIMPIO}${VARS_URL}" \
   --quiet
 
 if [[ -z "$URL" ]]; then
