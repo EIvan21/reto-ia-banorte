@@ -1750,14 +1750,19 @@ def test_las_versiones_fijadas_son_las_que_corren_las_pruebas():
         )
 
 
-def test_el_despliegue_no_deja_que_se_estrangule_la_cpu():
-    """El sink de BigQuery corre en hilos. Con la facturacion por request de
-    Cloud Run la CPU se estrangula al enviar la respuesta y esos hilos pueden no
-    terminar nunca: se pierde telemetria en silencio."""
+def test_el_despliegue_declara_su_postura_sobre_el_cpu():
+    """El sink de BigQuery corre en hilos, y con el CPU estrangulado pueden no
+    terminar. Mantenerlo siempre asignado los salva pero cuesta unos 47 dolares
+    al mes contra 7, en un servicio con poco trafico.
+
+    La prueba no impone una de las dos: exige que la eleccion este ESCRITA en el
+    script, porque una bandera de facturacion que nadie explica se cambia sin
+    querer -- que es justo como la telemetria estuvo cuatro dias muerta."""
     guion = (Path(__file__).resolve().parents[1] / "scripts" / "deploy.sh").read_text(
         encoding="utf-8"
     )
-    assert "--no-cpu-throttling" in guion
+    assert "cpu-throttling" in guion, "el script no dice nada sobre la asignacion de CPU"
+    assert "BQ_PROJECT" in guion
 
 
 def test_la_telemetria_se_vacia_al_apagar():

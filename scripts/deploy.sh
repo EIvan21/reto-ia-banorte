@@ -243,7 +243,12 @@ gcloud run deploy "$SERVICIO" \
   --cpu 1 \
   --timeout 300 \
   --concurrency 40 \
-  --no-cpu-throttling \
+  # CPU estrangulado entre peticiones: es la opcion barata, y no cambia las
+  # respuestas -- durante una peticion el contenedor recibe CPU completo. El
+  # costo es que los hilos del sink de BigQuery pueden no terminar, asi que
+  # stdout queda como la fuente confiable. Mantenerlo siempre asignado
+  # (--no-cpu-throttling) los salva, pero pasa de ~7 a ~47 dolares al mes.
+  --cpu-throttling \
   --min-instances "$MIN_INSTANCIAS" \
   --max-instances "$MAX_INSTANCIAS" \
   --set-secrets "ANTHROPIC_API_KEY=${SECRETO}:latest,AGENT_API_KEY=${SECRETO_AGENTE}:latest" \

@@ -74,6 +74,33 @@ alternativas que se descartaron.
 
 ---
 
+## Observabilidad, y lo que cuesta
+
+Cada turno se registra con 25 campos —latencia, tokens, herramientas, citas, etiquetas de
+guardrail, categoría— y **nunca el texto**, ni de la pregunta ni de la respuesta. Hay una prueba
+que lo enforza.
+
+Van a dos destinos. **stdout como JSON de una línea**, que la plataforma captura fuera del
+proceso y por tanto no se pierde nunca. Y **BigQuery**, para analizarlo con SQL y monitorearlo
+con el Agent Analytics Block.
+
+El sink de BigQuery corre en un hilo aparte para no agregarle latencia a nadie, y ahí aparece un
+compromiso real con el costo. Con `min-instances=1`, mantener el CPU siempre asignado
+(`--no-cpu-throttling`) garantiza que esos hilos terminen, pero cambia la facturación a
+*instancia* en vez de *petición*: del orden de 47 dólares al mes contra 7, por un servicio que
+recibe unas pocas llamadas.
+
+**El servicio corre hoy con el CPU estrangulado**, que es la opción barata. Las respuestas no
+cambian —durante una petición el contenedor recibe CPU completo— pero los hilos del sink pueden
+no completarse, así que BigQuery queda incompleto y stdout es la fuente confiable.
+`scripts/quien_lo_uso.py` lee de ahí justamente por eso.
+
+La solución que quita el compromiso está identificada y no implementada: un **sink de Cloud
+Logging hacia BigQuery** a nivel de plataforma, que elimina el hilo del proceso. Se documenta en
+*Siguiente iteración*.
+
+---
+
 ## Cómo se verifica
 
 - **287 pruebas offline** — recuperación, guardrails, protocolo, imágenes, streaming. Corren en
@@ -127,6 +154,9 @@ Lo que está identificado y no entró, con el motivo:
 - **Conjunto dorado en CI**, programado y con la API key como secreto. Hoy sólo corren las
   pruebas offline en cada push, a propósito: el conjunto dorado cuesta dinero y la decisión de
   "esto ya está listo" se toma mirando los resultados.
+- **Sink de Cloud Logging hacia BigQuery**, en vez del hilo en proceso. Elimina el compromiso
+  entre el costo del CPU siempre asignado y la pérdida de filas: stdout ya sale del proceso, así
+  que basta con enrutarlo. Hay que normalizar el esquema que genera el sink, o crear una vista.
 - **Rate limiting.** Con `max-instances` el gasto está acotado por diseño. Un limitador en
   memoria no sirve con varias instancias; lo correcto es Cloud Armor, que es infraestructura.
 - **Tabla OWASP LLM Top 10** mapeando cada control existente a su categoría.
