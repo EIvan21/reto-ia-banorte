@@ -2243,3 +2243,25 @@ def test_abreviar_el_titulo_no_lo_convierte_en_invento(texto):
 ])
 def test_aceptar_siglas_no_debilita_el_control(texto):
     assert "titulo_fuera_del_cv" in guardrails.verificar_academico(texto), texto
+
+
+@pytest.mark.parametrize("ruta", ["/salud", "/healthcheck", "/health"])
+def test_las_tres_rutas_de_salud_responden(ruta):
+    """Una sonda automatica prueba la convencion que conoce. Devolver 404 a
+    /health se lee como servicio mal montado, y ya paso: un navegador pego ahi
+    durante la evaluacion."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    r = TestClient(app).get(ruta)
+    assert r.status_code == 200, ruta
+    assert r.json()["estado"] == "ok"
+
+
+def test_healthz_sigue_sin_existir():
+    """Google reserva esa ruta y la intercepta antes del contenedor. Registrarla
+    daria la ilusion de que responde cuando en produccion nunca llega."""
+    from app.main import app
+
+    assert "/healthz" not in {r.path for r in app.routes if hasattr(r, "path")}

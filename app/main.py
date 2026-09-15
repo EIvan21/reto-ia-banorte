@@ -706,8 +706,15 @@ async def tarjeta_agente():
     )
 
 
+# Tres nombres para lo mismo. /salud es el canonico; /healthcheck y /health son
+# las convenciones que prueba cualquier sonda automatica, y devolver 404 a una de
+# ellas se lee como servicio mal montado. Un navegador ya pego a /health.
+#
+# /healthz NO existe a proposito: Google reserva esa ruta y la intercepta antes
+# de que llegue al contenedor.
 @app.get("/salud")
 @app.get("/healthcheck")
+@app.get("/health")
 async def salud():
     """Sonda de vida. Valida que el CV cargue: sin el, el agente no sirve de nada.
 
