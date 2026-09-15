@@ -12,11 +12,15 @@ Lee dos fuentes y las junta:
     las pruebas manuales usan curl.
 
 Lo mismo se puede consultar con SQL sobre la vista cv_agent.turnos, que une lo
-que escribio el proceso con lo que escribe el sink de Cloud Logging:
+que escribio el proceso hasta el 15/09 con lo que escribe el sink de Cloud
+Logging desde entonces, bajo un mismo esquema y con una columna "origen" que
+dice de cual vino cada fila:
 
-    bq query --use_legacy_sql=false       'SELECT categoria, COUNT(*) FROM 
-        WHERE marca_tiempo >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
-        GROUP BY categoria ORDER BY 2 DESC'
+    SELECT categoria, COUNT(*)
+    FROM cv-agent-edher.cv_agent.turnos
+    WHERE marca_tiempo >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
+    GROUP BY categoria
+    ORDER BY 2 DESC
 
 NO muestra lo que se hablo, porque no se guarda. Ni las preguntas ni las
 respuestas salen del proceso: solo la categoria, que se clasifica en memoria.
