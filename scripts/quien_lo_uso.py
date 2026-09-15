@@ -11,6 +11,13 @@ Lee dos fuentes y las junta:
   - Las cabeceras HTTP, para distinguir quien llamo: la plataforma usa Bun,
     las pruebas manuales usan curl.
 
+Lo mismo se puede consultar con SQL sobre la vista cv_agent.turnos, que une lo
+que escribio el proceso con lo que escribe el sink de Cloud Logging:
+
+    bq query --use_legacy_sql=false       'SELECT categoria, COUNT(*) FROM 
+        WHERE marca_tiempo >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
+        GROUP BY categoria ORDER BY 2 DESC'
+
 NO muestra lo que se hablo, porque no se guarda. Ni las preguntas ni las
 respuestas salen del proceso: solo la categoria, que se clasifica en memoria.
 Esa es una decision de diseno, no una limitacion de esta herramienta.

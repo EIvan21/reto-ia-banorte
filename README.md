@@ -90,14 +90,22 @@ compromiso real con el costo. Con `min-instances=1`, mantener el CPU siempre asi
 *instancia* en vez de *petición*: del orden de 47 dólares al mes contra 7, por un servicio que
 recibe unas pocas llamadas.
 
-**El servicio corre hoy con el CPU estrangulado**, que es la opción barata. Las respuestas no
-cambian —durante una petición el contenedor recibe CPU completo— pero los hilos del sink pueden
-no completarse, así que BigQuery queda incompleto y stdout es la fuente confiable.
-`scripts/quien_lo_uso.py` lee de ahí justamente por eso.
+**El servicio corre con el CPU estrangulado**, que es la opción barata. Las respuestas no cambian
+—durante una petición el contenedor recibe CPU completo— pero los hilos del sink en proceso
+dejan de ser confiables: unas veces alcanzan a terminar y otras no, que es peor de razonar que
+si fallaran siempre.
 
-La solución que quita el compromiso está identificada y no implementada: un **sink de Cloud
-Logging hacia BigQuery** a nivel de plataforma, que elimina el hilo del proceso. Se documenta en
-*Siguiente iteración*.
+Por eso la exportación a BigQuery ya no la hace el proceso, sino un **sink de Cloud Logging** a
+nivel de plataforma. stdout ya salía del proceso, así que basta con enrutarlo: no hay hilo que
+perder y el costo no cambia.
+
+Se consulta por la vista `cv_agent.turnos`, que une las dos fuentes —lo que escribió el proceso
+hasta el 15/09 y lo que escribe el sink desde entonces— bajo un mismo esquema, con una columna
+`origen` que dice de cuál vino cada fila.
+
+Un detalle del sink que conviene saber: **infiere el esquema y agrega columnas conforme aparecen
+campos nuevos.** Un campo que siempre viene nulo —como `error` cuando nada falla— no existe en
+la tabla hasta la primera vez que trae valor.
 
 ---
 
@@ -154,9 +162,6 @@ Lo que está identificado y no entró, con el motivo:
 - **Conjunto dorado en CI**, programado y con la API key como secreto. Hoy sólo corren las
   pruebas offline en cada push, a propósito: el conjunto dorado cuesta dinero y la decisión de
   "esto ya está listo" se toma mirando los resultados.
-- **Sink de Cloud Logging hacia BigQuery**, en vez del hilo en proceso. Elimina el compromiso
-  entre el costo del CPU siempre asignado y la pérdida de filas: stdout ya sale del proceso, así
-  que basta con enrutarlo. Hay que normalizar el esquema que genera el sink, o crear una vista.
 - **Rate limiting.** Con `max-instances` el gasto está acotado por diseño. Un limitador en
   memoria no sirve con varias instancias; lo correcto es Cloud Armor, que es infraestructura.
 - **Tabla OWASP LLM Top 10** mapeando cada control existente a su categoría.
