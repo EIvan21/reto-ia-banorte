@@ -230,6 +230,16 @@ BQ_PROJECT="${BQ_PROJECT:-$PROYECTO}"
 BQ_DATASET="${BQ_DATASET:-cv_agent}"
 echo "==> Telemetria: ${BQ_PROJECT}.${BQ_DATASET}"
 
+# CPU estrangulado entre peticiones: es la opcion barata, y no cambia las
+# respuestas -- durante una peticion el contenedor recibe CPU completo. El
+# costo es que los hilos del sink de BigQuery pueden no terminar, asi que
+# stdout queda como la fuente confiable. Mantenerlo siempre asignado
+# (--no-cpu-throttling) los salva, pero pasa de ~7 a ~47 dolares al mes.
+#
+# Este comentario vive aqui y no junto a su bandera porque dentro de un comando
+# partido con "\" un "#" corta el comando en ese punto. Ya paso: gcloud
+# desplego con la mitad de las banderas, heredo las variables de la revision
+# anterior, y el script murio despues, con el servicio ya actualizado.
 echo "==> Desplegando (build remoto con Cloud Build)..."
 gcloud run deploy "$SERVICIO" \
   --source . \
@@ -243,11 +253,6 @@ gcloud run deploy "$SERVICIO" \
   --cpu 1 \
   --timeout 300 \
   --concurrency 40 \
-  # CPU estrangulado entre peticiones: es la opcion barata, y no cambia las
-  # respuestas -- durante una peticion el contenedor recibe CPU completo. El
-  # costo es que los hilos del sink de BigQuery pueden no terminar, asi que
-  # stdout queda como la fuente confiable. Mantenerlo siempre asignado
-  # (--no-cpu-throttling) los salva, pero pasa de ~7 a ~47 dolares al mes.
   --cpu-throttling \
   --min-instances "$MIN_INSTANCIAS" \
   --max-instances "$MAX_INSTANCIAS" \

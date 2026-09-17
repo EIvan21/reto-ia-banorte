@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 import sys
 from pathlib import Path
 
@@ -1203,6 +1204,47 @@ def test_salud_reporta_la_version_desplegada():
     assert "construido_desde_arbol_limpio" in cuerpo
 
 
+# --- El despliegue, leido como lo lee bash -----------------------------------
+# Las pruebas de deploy.sh buscaban texto en el archivo, y pasaron mientras el
+# despliegue salia a medias. Un comentario dentro de un comando partido con "\"
+# lo corta ahi: en bash el "#" se come el resto de la linea, continuacion
+# incluida. gcloud recibio la mitad de las banderas, conservo las variables de
+# la revision anterior, y /salud anuncio dos dias un commit que no era el que
+# corria. Las banderas estaban en el archivo; bash nunca se las paso a gcloud.
+
+_HEREDOC = re.compile(r"<<-?\s*['\"]?(\w+)['\"]?")
+
+
+def _comandos_de_shell(ruta: Path) -> list[list[str]]:
+    """Cada comando del script tal como lo ejecuta bash: una "\\" al final de
+    linea une la siguiente, lo que sigue a un "#" ya no es parte del comando, y
+    el cuerpo de un heredoc es texto, no comandos."""
+    comandos, cierre = [], None
+    for linea in ruta.read_text(encoding="utf-8").replace("\\\n", "").splitlines():
+        if cierre:
+            if linea.strip() == cierre:
+                cierre = None
+            continue
+        m = _HEREDOC.search(linea)
+        if m:
+            cierre = m.group(1)
+        try:
+            partes = shlex.split(linea, comments=True)
+        except ValueError:  # comillas que abren en una linea y cierran en otra
+            continue
+        if partes:
+            comandos.append(partes)
+    return comandos
+
+
+def _comando_de_despliegue() -> list[str]:
+    guion = Path(__file__).resolve().parents[1] / "scripts" / "deploy.sh"
+    for partes in _comandos_de_shell(guion):
+        if partes[:3] == ["gcloud", "run", "deploy"]:
+            return partes
+    raise AssertionError("deploy.sh ya no tiene un gcloud run deploy")
+
+
 def test_el_despliegue_sella_el_commit_y_nombra_la_revision():
     """Si alguien quita esto del script, /salud dice 'desconocido' para siempre
     y nadie lo nota hasta que hace falta."""
@@ -1210,9 +1252,27 @@ def test_el_despliegue_sella_el_commit_y_nombra_la_revision():
         encoding="utf-8"
     )
     assert "GIT_SHA=" in guion, "el despliegue no calcula el commit"
-    assert "GIT_SHA=${GIT_SHA}" in guion, "el commit no llega al contenedor"
-    assert "--revision-suffix" in guion, "las revisiones no llevan el commit en el nombre"
     assert "git status --porcelain" in guion, "no avisa si se despliega un arbol sucio"
+
+    comando = _comando_de_despliegue()
+    assert "--revision-suffix" in comando, "las revisiones no llevan el commit en el nombre"
+    assert "--set-env-vars" in comando, "gcloud no recibe las variables del contenedor"
+    variables = comando[comando.index("--set-env-vars") + 1]
+    for sello in ("GIT_SHA=${GIT_SHA}", "GIT_BUILD=${GIT_BUILD}", "GIT_LIMPIO=${GIT_LIMPIO}"):
+        assert sello in variables, f"{sello} no llega al contenedor"
+
+
+@pytest.mark.parametrize(
+    "guion",
+    sorted((Path(__file__).resolve().parents[1] / "scripts").glob("*.sh")),
+    ids=lambda p: p.name,
+)
+def test_ningun_comando_de_shell_empieza_con_una_bandera(guion):
+    """Es la huella de una continuacion rota, por un comentario en medio o por
+    una "\\" olvidada: la mitad de abajo se vuelve un comando aparte, y con
+    set -e el script muere DESPUES de haber hecho la mitad de su trabajo."""
+    sueltos = [" ".join(p[:2]) for p in _comandos_de_shell(guion) if p[0].startswith("-")]
+    assert not sueltos, f"banderas sueltas en {guion.name}: {sueltos}"
 
 
 # --- Cache del transcript ---------------------------------------------------
@@ -1755,14 +1815,14 @@ def test_el_despliegue_declara_su_postura_sobre_el_cpu():
     terminar. Mantenerlo siempre asignado los salva pero cuesta unos 47 dolares
     al mes contra 7, en un servicio con poco trafico.
 
-    La prueba no impone una de las dos: exige que la eleccion este ESCRITA en el
-    script, porque una bandera de facturacion que nadie explica se cambia sin
-    querer -- que es justo como la telemetria estuvo cuatro dias muerta."""
-    guion = (Path(__file__).resolve().parents[1] / "scripts" / "deploy.sh").read_text(
-        encoding="utf-8"
-    )
-    assert "cpu-throttling" in guion, "el script no dice nada sobre la asignacion de CPU"
-    assert "BQ_PROJECT" in guion
+    La prueba no impone una de las dos: exige que la eleccion LLEGUE a gcloud,
+    porque una bandera de facturacion que no se pasa hereda la de la revision
+    anterior, y esa puede ser cualquiera."""
+    comando = _comando_de_despliegue()
+    posturas = {"--cpu-throttling", "--no-cpu-throttling"} & set(comando)
+    assert len(posturas) == 1, f"gcloud no recibe una postura clara sobre el CPU: {posturas}"
+    for bandera in ("--min-instances", "--max-instances", "--set-secrets"):
+        assert bandera in comando, f"{bandera} esta en el archivo pero no le llega a gcloud"
 
 
 def test_la_telemetria_se_vacia_al_apagar():

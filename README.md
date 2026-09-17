@@ -111,7 +111,7 @@ la tabla hasta la primera vez que trae valor.
 
 ## Cómo se verifica
 
-- **287 pruebas offline** — recuperación, guardrails, protocolo, imágenes, streaming. Corren en
+- **293 pruebas offline** — recuperación, guardrails, protocolo, imágenes, streaming. Corren en
   CI en cada push, en ~2 s y sin API key.
 - **45/45 en el conjunto dorado** — casos contra el modelo real, con aserciones sobre qué
   herramienta se usó y qué se citó. Se corre a mano antes de desplegar.
